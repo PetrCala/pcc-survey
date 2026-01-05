@@ -1,8 +1,10 @@
-# Source: validation/methods/index.R
-# Description: Validate that upon a controlled data set, various methods yield the same results.
-
-if (!grepl("methods", getwd())) {
-  stop("Please run this script from the 'methods' directory.")
+# Make execution location-independent by setting the working directory to the
+# directory containing this script when run via Rscript.
+args <- commandArgs(trailingOnly = FALSE)
+file_arg <- grep("^--file=", args, value = TRUE)
+if (length(file_arg) > 0) {
+  script_path <- sub("^--file=", "", file_arg[1])
+  setwd(dirname(normalizePath(script_path)))
 }
 rm(list = ls())
 

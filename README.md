@@ -5,10 +5,14 @@ This folder validates the outcomes of custom methods on a controlled dataset (de
 ## Table of contents
 
 - [Table of contents](#table-of-contents)
-- [Quickstart](#quickstart)
-  - [Run in RStudio](#run-in-rstudio)
-  - [Run in pure R (CLI)](#run-in-pure-r-cli)
+- [Quickstart (Makefile)](#quickstart-makefile)
+  - [Run in RStudio (optional)](#run-in-rstudio-optional)
 - [Prerequisites](#prerequisites)
+- [OS setup](#os-setup)
+  - [macOS](#macos)
+  - [Linux](#linux)
+  - [Windows](#windows)
+- [Makefile commands](#makefile-commands)
 - [Configuration](#configuration)
 - [What the script does](#what-the-script-does)
 - [Inputs / outputs](#inputs--outputs)
@@ -16,48 +20,75 @@ This folder validates the outcomes of custom methods on a controlled dataset (de
 - [Source data description](#source-data-description)
 - [Notes](#notes)
 
-## Quickstart
+## Quickstart (Makefile)
 
-Important: `index.R` currently enforces that your working directory contains the string `methods`:
-
-```r
-if (!grepl("methods", getwd())) {
-  stop("Please run this script from the 'methods' directory.")
-}
-```
-
-If this folder isn’t named `methods` (or doesn’t live under a `methods/` path), either run it from a path that matches that check or adjust the guard in `index.R`.
-
-### Run in RStudio
-
-1. Set your working directory to the root of this folder.
-1. Ensure dependencies are installed (see `packages.txt`).
-1. (Optional) Adjust run settings in `static.yaml`.
-1. Open `index.R` and run it.
-
-### Run in pure R (CLI)
-
-1. `cd` into the root of this folder.
-1. Ensure dependencies are installed (see [Prerequisites](#prerequisites)).
-1. Run:
+From the repo root:
 
 ```bash
-Rscript index.R
+make setup
+make run
 ```
+
+Outputs:
+
+- `pcc-survey/data/expected_stats.xlsx` (overwritten on each run)
+
+### Run in RStudio (optional)
+
+If you prefer RStudio, open this folder as a project (or set the working directory to `pcc-survey/`), then run `index.R`.
 
 ## Prerequisites
 
-- R (and the ability to install CRAN packages).
-- Packages listed in `packages.txt`.
+- R (so `Rscript` works from your terminal).
+- A working `make` installation.
 
-To install any missing packages from `packages.txt`:
+If you don’t have `make`, follow the OS section below.
 
-```r
-pkgs <- readLines("packages.txt", warn = FALSE)
-pkgs <- trimws(pkgs)
-pkgs <- pkgs[nzchar(pkgs)]
-missing <- pkgs[!pkgs %in% rownames(installed.packages())]
-if (length(missing) > 0) install.packages(missing)
+## OS setup
+
+### macOS
+
+- Install R from CRAN.
+- Install Command Line Tools (provides `make`):
+
+```bash
+xcode-select --install
+```
+
+### Linux
+
+- Install R + make using your distro’s package manager (examples):
+
+```bash
+# Debian/Ubuntu
+sudo apt-get update && sudo apt-get install -y r-base make
+```
+
+```bash
+# Fedora
+sudo dnf install -y R make
+```
+
+### Windows
+
+You have three good options (pick one):
+
+- **WSL2 (recommended)**: install Ubuntu, then install R + make inside WSL, and run `make ...` from the WSL shell.
+- **Git Bash**: install Git for Windows (includes Git Bash) and a `make` provider (e.g. MSYS2), then run `make ...` from Git Bash.
+- **Rtools**: install Rtools for your R version (includes `make` inside its MSYS2 environment).
+
+Regardless of option, ensure `Rscript` is available in your shell `PATH`.
+
+## Makefile commands
+
+From the repo root:
+
+```bash
+make help
+make doctor
+make setup
+make run
+make clean
 ```
 
 ## Configuration
