@@ -3,9 +3,10 @@
 pccsurvey_extdata <- function(...) {
   p <- system.file("extdata", ..., package = "pccsurvey")
   if (nzchar(p)) {
-    return(p)
+    p
+  } else {
+    file.path("inst", "extdata", ...)
   }
-  file.path("inst", "extdata", ...)
 }
 
 #' Load a single data frame from the shipped extdata (or repo `data/` fallback)

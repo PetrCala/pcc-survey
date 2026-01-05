@@ -13,7 +13,7 @@
 run_validation <- function(
     config_path = pccsurvey_extdata("static.yaml"),
     output_dir = "data") {
-  STATIC <- read_static(config_path)
+  STATIC <- read_static(config_path) # nolint: object_name_linter.
   df <- load_data(file_name = STATIC$file_name)
 
   # PCC validation

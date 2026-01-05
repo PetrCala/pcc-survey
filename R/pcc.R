@@ -14,7 +14,7 @@ pcc_variance <- function(df, offset) {
   denominator <- df$dof - offset
 
   variance <- numerator / denominator
-  return(variance)
+  variance
 }
 
 #' Calculate random effects
@@ -58,7 +58,7 @@ re <- function(df, effect = NULL, se = NULL, method = "DL") {
     }
   )
 
-  return(result)
+  result
 }
 
 #' Calculate UWLS
@@ -94,7 +94,7 @@ uwls <- function(df, effect = NULL, se = NULL) {
     }
   )
 
-  return(result)
+  result
 }
 
 
@@ -127,7 +127,7 @@ uwls3 <- function(df) {
   }
 
   uwls_ <- uwls(df)
-  return(uwls_)
+  uwls_
 }
 
 #' Calculate the Hunter-Schmidt estimate
@@ -157,7 +157,7 @@ hsma <- function(df) {
   stopifnot(sd_sq >= 0) # Assert no negative SD_r^2
   se_r <- sqrt(sd_sq) / sqrt(nrow(df)) # SE_r
   t_value <- r_avg / se_r
-  return(list(est = r_avg, t_value = t_value))
+  list(est = r_avg, t_value = t_value)
 }
 
 #' Calculate Fisher's z
@@ -189,7 +189,7 @@ fishers_z <- function(df, method = "ML") {
 
   re_z <- (exp(2 * re_est) - 1) / (exp(2 * re_est) + 1)
 
-  return(list(est = re_z, t_value = re_t_value))
+  list(est = re_z, t_value = re_t_value)
 }
 
 #' Calculate various summary statistics associated with the PCC data frame
@@ -204,9 +204,7 @@ pcc_sum_stats <- function(df, log_results = TRUE) {
     if (sum(is.na(df$sample_size)) == nrow(df)) {
       return(NA)
     } # No sample sizes
-    return(
-      sum(df$sample_size < lt, na.rm = TRUE) / k_
-    )
+    sum(df$sample_size < lt, na.rm = TRUE) / k_
   }
 
   res <- list(
