@@ -54,7 +54,7 @@ re <- function(df, effect = NULL, se = NULL, method = "DL") {
     },
     error = function(e) {
       message(paste("Could not fit the RE model for meta-analysis", meta, ": ", e))
-      return(list(est = NA, t_value = NA))
+      list(est = NA, t_value = NA)
     }
   )
 
@@ -86,11 +86,11 @@ uwls <- function(df, effect = NULL, se = NULL) {
       summary_uwls <- summary(uwls)
       est <- summary_uwls$coefficients[1, "Estimate"]
       t_value <- summary_uwls$coefficients[1, "t value"]
-      return(list(est = est, t_value = t_value))
+      list(est = est, t_value = t_value)
     },
     error = function(e) {
       message(paste("Could not fit the UWLS model for meta-analysis", meta, ": ", e))
-      return(list(est = NA, t_value = NA))
+      list(est = NA, t_value = NA)
     }
   )
 
