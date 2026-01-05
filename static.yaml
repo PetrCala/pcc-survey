@@ -1,0 +1,15 @@
+separators: ',' # What .csv separators to use
+file_name: "base.xlsx" # Name of the base Excel file in the data folder
+expected_stats_file_name: "expected_stats.xlsx" # Name of the file with the expected statistics
+re_method: "ML"          # One of "DL", "ML", "REML",...; only used if use_reml is true
+re_method_fishers_z: "ML" # Same as re_method, but this one sets the flavor of the re mehthod used in Fisher's Z
+
+validate:
+  pcc_var_1: false       # PCC variance offset 1
+  pcc_var_2: false       # PCC variance offset 2
+  re: false              # Random-Effects
+  uwls: false            # UWLS
+  uwls3: true           # UWLS3
+  hsma: false            # HSMA
+  fishers_z: false        # Fisher's Z
+
