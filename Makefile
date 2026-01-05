@@ -2,7 +2,10 @@
 
 .PHONY: help setup run validate clean doctor
 
-PROJECT_DIR := pcc-survey
+# Absolute path to this repo's root (directory containing this Makefile).
+# This avoids hard-coding the project directory name and works even if `make`
+# is invoked from a different working directory.
+PROJECT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 RSCRIPT ?= Rscript
 
 help:
@@ -20,10 +23,10 @@ help:
 	@echo ""
 
 setup:
-	@$(RSCRIPT) $(PROJECT_DIR)/scripts/install-packages.R
+	@$(RSCRIPT) "$(PROJECT_DIR)/scripts/install-packages.R"
 
 run:
-	@cd $(PROJECT_DIR) && $(RSCRIPT) index.R
+	@cd "$(PROJECT_DIR)" && $(RSCRIPT) index.R
 
 validate: run
 
