@@ -1,3 +1,18 @@
+# Helper utilities used by the default custom implementation.
+dof_or_sample_size <- function(df, offset = 0) {
+  stopifnot(is.numeric(offset), length(offset) == 1)
+
+  if (!("dof" %in% names(df)) || !("sample_size" %in% names(df))) {
+    stop("df must contain columns 'dof' and 'sample_size'")
+  }
+
+  dof <- df$dof
+  dof[is.na(dof)] <- df$sample_size[is.na(dof)] - 7
+
+  denom <- dof - offset
+  denom
+}
+
 #' Using the base data frame, and a given offset, calculate the variance of the PCC
 #'
 #' @note During the validation, an offset of 1 and and offset of 2 will be automatically applied to this function
@@ -8,7 +23,7 @@ custom_pcc_variance <- function(df, offset) {
   pcc_ <- df$effect
   numerator <- (1 - pcc_^2)^2
 
-  denominator <- dof_or_sample_size(df, offset = offset) # From pcc.R
+  denominator <- dof_or_sample_size(df, offset = offset)
   variance <- numerator / denominator
   # END OF MODIFIABLE SECTION
 

@@ -31,7 +31,7 @@ make run
 
 Outputs:
 
-- `pcc-survey/data/expected_stats.xlsx` (overwritten on each run)
+- `data/expected_stats.xlsx` (overwritten on each run)
 
 ### Run in RStudio (optional)
 

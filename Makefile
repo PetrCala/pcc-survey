@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help setup document build check run validate clean doctor
+.PHONY: help setup document build check lint run validate clean doctor
 
 # Absolute path to this repo's root (directory containing this Makefile).
 # This avoids hard-coding the project directory name and works even if `make`
@@ -18,6 +18,7 @@ help:
 	@echo "  setup     Install dependencies via devtools (bootstraps devtools if needed)"
 	@echo "  document  Generate roxygen docs (NAMESPACE/man)"
 	@echo "  check     Run R CMD check via devtools"
+	@echo "  lint      Run lintr on the package (fails on lint)"
 	@echo "  run       Run the validation (writes $(PROJECT_DIR)/data/expected_stats.xlsx)"
 	@echo "  validate  Alias for run"
 	@echo "  clean     Remove generated outputs"
@@ -35,6 +36,9 @@ build:
 
 check:
 	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup'); devtools::check()"
+
+lint:
+	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup'); if (!requireNamespace('lintr', quietly=TRUE)) stop('lintr not installed; run make setup'); l <- lintr::lint_package(); if (length(l) > 0) { print(l); quit(status=1) }"
 
 run:
 	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup'); devtools::load_all('.'); run_validation()"

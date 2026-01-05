@@ -3,7 +3,7 @@ Title: PCC Survey Validation Utilities
 Version: 0.0.0.9000
 Authors@R: person("Petr", "Čala", email = "cala.p@seznam.cz", role = c("aut", "cre"))
 Description: Validates outcomes of custom meta-analysis methods on a controlled dataset.
-License: MIT
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
@@ -17,5 +17,6 @@ Imports:
     yaml
 Suggests:
     devtools,
+    lintr,
     roxygen2
 
