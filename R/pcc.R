@@ -1,6 +1,3 @@
-library("stats")
-
-
 #' Calculate the PCC variance.
 #'
 #' @param df [data.frame] The data frame upon which to calculate the PCC vairance. Should include the columns 'effect', 'sample_size', 'dof'
@@ -43,7 +40,11 @@ re <- function(df, effect = NULL, se = NULL, method = "DL") {
       re_data_ <- data.frame(yi = effect, sei = se, study = df$study)
 
       suppressWarnings( # Sometimes the variances are large
-        re_ <- metafor::rma(yi = yi, sei = sei, data = re_data_, method = method)
+        re_ <- metafor::rma(
+          yi = re_data_$yi,
+          sei = re_data_$sei,
+          method = method
+        )
       )
       re_est <- re_$beta[1]
       re_se <- re_$se[1]
@@ -104,6 +105,7 @@ uwls <- function(df, effect = NULL, se = NULL) {
 #' @export
 uwls3 <- function(df) {
   t_ <- df$effect / df$se
+  meta <- unique(df$meta)
   dof_ <- df$dof # Q: here, use sample size or DoF?
 
   pcc3 <- t_ / sqrt(t_^2 + dof_ + 3) # dof_ + 3 ~~ sample_size - 7 + 3
@@ -225,5 +227,5 @@ pcc_sum_stats <- function(df, log_results = TRUE) {
     message("PCC analysis summary statistics:")
     message(paste("Number of PCC "))
   }
-  return(res)
+  res
 }

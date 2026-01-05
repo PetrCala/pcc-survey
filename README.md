@@ -1,6 +1,6 @@
-<h1 align="center">PCC Survey</h1>
+<h1 align="center">PCC Survey (`pccsurvey`)</h1>
 
-This folder validates the outcomes of custom methods on a controlled dataset (default: `data/base.xlsx`). It’s mainly meant for iterating on implementations in `src/custom.R` and comparing them against the reference methods in `src/pcc.R`.
+This repo is now a **proper R package** named `pccsurvey`. It validates outcomes of custom methods on a controlled dataset (shipped in `inst/extdata/base.xlsx`). It’s mainly meant for iterating on implementations in `R/custom.R` and comparing them against the reference methods in `R/pcc.R`.
 
 ## Table of contents
 
@@ -35,7 +35,12 @@ Outputs:
 
 ### Run in RStudio (optional)
 
-If you prefer RStudio, open this folder as a project (or set the working directory to `pcc-survey/`), then run `index.R`.
+If you prefer RStudio, open this folder as a project, then run:
+
+```r
+devtools::load_all()
+run_validation()
+```
 
 ## Prerequisites
 
@@ -87,13 +92,15 @@ From the repo root:
 make help
 make doctor
 make setup
+make document
+make check
 make run
 make clean
 ```
 
 ## Configuration
 
-Configuration lives in `static.yaml` and is read by `read_static()` at runtime. Common keys:
+Configuration is shipped in `inst/extdata/static.yaml` and is read by `read_static()` at runtime. Common keys:
 
 - `file_name`: Input Excel file name under `data/` (default: `base.xlsx`).
 - `expected_stats_file_name`: Output Excel file name under `data/` (default: `expected_stats.xlsx`).
@@ -104,30 +111,30 @@ Configuration lives in `static.yaml` and is read by `read_static()` at runtime. 
 
 ## What the script does
 
-Running `index.R`:
+Running `make run` (or `run_validation()`):
 
-- Sources all `*.R` files from `src/`.
-- Reads `static.yaml`.
-- Loads data from `data/<file_name>`.
+- Loads the package code from `R/`.
+- Reads config from `inst/extdata/static.yaml` (by default).
+- Loads data from the shipped `inst/extdata/<file_name>` (by default).
 - Optionally validates PCC variance (offset 1/2) against `df$pcc_var_1` / `df$pcc_var_2`.
 - Computes the expected method results (reference implementations).
-- Optionally validates your custom implementations (`src/custom.R`) against the expected results.
+- Optionally validates your custom implementations (`R/custom.R`) against the expected results.
 - Writes a summary of expected results to `data/<expected_stats_file_name>`.
 
 ## Inputs / outputs
 
 - **Inputs**:
-  - `static.yaml`
-  - `data/<file_name>` (default: `data/base.xlsx`)
+  - `inst/extdata/static.yaml`
+  - `inst/extdata/<file_name>` (default: `inst/extdata/base.xlsx`)
 - **Outputs**:
   - `data/<expected_stats_file_name>` (default: `data/expected_stats.xlsx`, overwritten)
   - Console messages; validation failures `stop()` the run
 
 ## Modifying custom methods
 
-By default, all methods have an expected result for the predefined set of data (`base.xlsx`). These are listed in `src/pcc.R`.
+By default, all methods have an expected result for the predefined set of data (`base.xlsx`). These are listed in `R/pcc.R`.
 
-If you wish to compare these against your custom method, **go to `src/custom.R`**. There are placeholder functions you can replace with your own code; their results will be compared against the expected results produced by the reference methods in `src/pcc.R`.
+If you wish to compare these against your custom method, **go to `R/custom.R`**. There are placeholder functions you can replace with your own code; their results will be compared against the expected results produced by the reference methods in `R/pcc.R`.
 
 When defining the custom methods, keep in mind the following:
 
@@ -188,7 +195,7 @@ The main data frame to test against, `base.xlsx`, is a single meta-analysis from
   }
   ```
 
-- PCC variance was calculated for two offsets (1 and 2) using `pcc_variance` (see `src/pcc.R`).
+- PCC variance was calculated for two offsets (1 and 2) using `pcc_variance` (see `R/pcc.R`).
 
 ## Notes
 

@@ -1,0 +1,5 @@
+^\.cursor$
+^\.git$
+^\.gitignore$
+^data/expected_stats\.xlsx$
+

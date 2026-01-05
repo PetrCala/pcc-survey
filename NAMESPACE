@@ -1,0 +1,12 @@
+# Generated manually for this repo. If you later adopt roxygen2 docs generation,
+# you can replace this with a roxygen-generated NAMESPACE.
+
+export(fishers_z)
+export(hsma)
+export(pcc_sum_stats)
+export(pcc_variance)
+export(re)
+export(run_validation)
+export(uwls)
+export(uwls3)
+
