@@ -14,8 +14,7 @@ linters: linters_with_defaults(
     # Disable assignment linter if you use assignment arrows other than `<-`
     assignment_linter = NULL,
     # Disable commented code linter
-    commented_code_linter = NULL,
-    # Disable cyclocompexity linter
-    cyclocomp_linter = NULL)
+    commented_code_linter = NULL
+    )
 exclusions: list(
     "tests/")
