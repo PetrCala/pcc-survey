@@ -13,6 +13,40 @@
 run_validation <- function(
     config_path = pccsurvey_extdata("static.yaml"),
     output_dir = "data") {
+  compute_expected_results <- function(df, STATIC) { # nolint: object_name_linter.
+    list(
+      re = re(df, method = STATIC$re_method),
+      uwls = uwls(df),
+      uwls3 = uwls3(df),
+      hsma = hsma(df),
+      fishers_z = fishers_z(df, method = STATIC$re_method_fishers_z)
+    )
+  }
+
+  maybe_validate_methods <- function(df, STATIC, expected_results) { # nolint: object_name_linter.
+    validate_method_wrapper <- function(method_name, method_func, expected_result) {
+      message(paste("Validating the", method_name, "method."))
+      custom_result <- method_func(df)
+      validate_method(custom_results = custom_result, expected_results = expected_result)
+    }
+
+    if (isTRUE(STATIC$validate$re)) {
+      validate_method_wrapper("RE", custom_re, expected_results$re)
+    }
+    if (isTRUE(STATIC$validate$uwls)) {
+      validate_method_wrapper("UWLS", custom_uwls, expected_results$uwls)
+    }
+    if (isTRUE(STATIC$validate$uwls3)) {
+      validate_method_wrapper("UWLS+3", custom_uwls3, expected_results$uwls3)
+    }
+    if (isTRUE(STATIC$validate$hsma)) {
+      validate_method_wrapper("HSMA", custom_hsma, expected_results$hsma)
+    }
+    if (isTRUE(STATIC$validate$fishers_z)) {
+      validate_method_wrapper("Fisher's Z", custom_fishers_z, expected_results$fishers_z)
+    }
+  }
+
   STATIC <- read_static(config_path) # nolint: object_name_linter.
   df <- load_data(file_name = STATIC$file_name)
 
@@ -31,35 +65,8 @@ run_validation <- function(
 
   # Methods validation
   message("Calculating the expected PCC statistics.")
-  expected_results <- list(
-    re = re(df, method = STATIC$re_method),
-    uwls = uwls(df),
-    uwls3 = uwls3(df),
-    hsma = hsma(df),
-    fishers_z = fishers_z(df, method = STATIC$re_method_fishers_z)
-  )
-
-  validate_method_wrapper <- function(method_name, method_func, expected_result) {
-    message(paste("Validating the", method_name, "method."))
-    custom_result <- method_func(df)
-    validate_method(custom_results = custom_result, expected_results = expected_result)
-  }
-
-  if (isTRUE(STATIC$validate$re)) {
-    validate_method_wrapper("RE", custom_re, expected_results$re)
-  }
-  if (isTRUE(STATIC$validate$uwls)) {
-    validate_method_wrapper("UWLS", custom_uwls, expected_results$uwls)
-  }
-  if (isTRUE(STATIC$validate$uwls3)) {
-    validate_method_wrapper("UWLS+3", custom_uwls3, expected_results$uwls3)
-  }
-  if (isTRUE(STATIC$validate$hsma)) {
-    validate_method_wrapper("HSMA", custom_hsma, expected_results$hsma)
-  }
-  if (isTRUE(STATIC$validate$fishers_z)) {
-    validate_method_wrapper("Fisher's Z", custom_fishers_z, expected_results$fishers_z)
-  }
+  expected_results <- compute_expected_results(df, STATIC)
+  maybe_validate_methods(df, STATIC, expected_results)
 
   # Write expected results
   dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)

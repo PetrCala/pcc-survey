@@ -40,8 +40,11 @@ save_data <- function(results, file_name, output_dir = "data") {
   message(paste("Creating a data frame from the results list under path", full_path))
 
   out <- list()
-  for (method in names(results)) {
+  for (method in sort(names(results))) {
     res <- results[[method]]
+    if (!is.list(res) || !all(c("est", "t_value") %in% names(res))) {
+      next
+    }
     out[[paste0(method, "_est")]] <- res$est
     out[[paste0(method, "_t_value")]] <- res$t_value
   }

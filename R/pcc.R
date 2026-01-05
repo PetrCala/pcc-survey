@@ -29,9 +29,10 @@ re <- function(df, effect = NULL, se = NULL, method = "DL") {
   if (is.null(se)) se <- df$se
   stopifnot(length(effect) == nrow(df), length(se) == nrow(df))
 
+  meta <- unique(df$meta)
+
   result <- tryCatch(
     {
-      meta <- unique(df$meta)
       if (length(meta) != 1) {
         message("Could not calculate RE for multiple meta-analyses")
         return(list(est = NA, t_value = NA))
@@ -53,7 +54,7 @@ re <- function(df, effect = NULL, se = NULL, method = "DL") {
       return(list(est = re_est, t_value = re_t_value))
     },
     error = function(e) {
-      message(paste("Could not fit the RE model for meta-analysis", meta, ": ", e))
+      message(paste("Could not fit the RE model for meta-analysis", meta, ": ", conditionMessage(e)))
       list(est = NA, t_value = NA)
     }
   )
@@ -77,19 +78,21 @@ uwls <- function(df, effect = NULL, se = NULL) {
 
   meta <- unique(df$meta)
 
-  df$t <- effect / se
-  df$precision <- 1 / se
+  df_model <- data.frame(
+    t = effect / se,
+    precision = 1 / se
+  )
 
   result <- tryCatch(
     {
-      uwls <- stats::lm(t ~ precision - 1, data = df)
+      uwls <- stats::lm(t ~ precision - 1, data = df_model)
       summary_uwls <- summary(uwls)
       est <- summary_uwls$coefficients[1, "Estimate"]
       t_value <- summary_uwls$coefficients[1, "t value"]
       list(est = est, t_value = t_value)
     },
     error = function(e) {
-      message(paste("Could not fit the UWLS model for meta-analysis", meta, ": ", e))
+      message(paste("Could not fit the UWLS model for meta-analysis", meta, ": ", conditionMessage(e)))
       list(est = NA, t_value = NA)
     }
   )
@@ -104,9 +107,13 @@ uwls <- function(df, effect = NULL, se = NULL) {
 #' @return [list] A list with properties "est", "t_value".
 #' @export
 uwls3 <- function(df) {
-  t_ <- df$effect / df$se
   meta <- unique(df$meta)
-  dof_ <- df$dof # Q: here, use sample size or DoF?
+
+  # Prefer DoF when present; when missing, follow project convention and impute
+  # as sample_size - 7.
+  dof_ <- dof_or_sample_size(df, offset = 0)
+
+  t_ <- df$effect / df$se
 
   pcc3 <- t_ / sqrt(t_^2 + dof_ + 3) # dof_ + 3 ~~ sample_size - 7 + 3
 
@@ -126,8 +133,7 @@ uwls3 <- function(df) {
     return(list(est = NA, t_value = NA))
   }
 
-  uwls_ <- uwls(df)
-  uwls_
+  uwls(uwls3_data)
 }
 
 #' Calculate the Hunter-Schmidt estimate
@@ -210,7 +216,7 @@ pcc_sum_stats <- function(df, log_results = TRUE) {
   res <- list(
     k_ = k_,
     avg_n = mean(df$sample_size, na.rm = TRUE),
-    median_n = mean(df$sample_size, na.rm = TRUE),
+    median_n = stats::median(df$sample_size, na.rm = TRUE),
     quantile_1_n = as.numeric(quantiles[1]),
     quantile_3_n = as.numeric(quantiles[2]),
     ss_lt_50 = get_ss_lt(50),
