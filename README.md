@@ -1,35 +1,56 @@
-# Methods validation
+<h1 align="center">PCC Survey</h1>
 
-This folder serves to validate the outcomes of several custom methods upon a set of controlled data - `base.xlsx`.
+This folder validates the outcomes of custom methods on a controlled dataset (default: `data/base.xlsx`). It’s mainly meant for iterating on implementations in `src/custom.R` and comparing them against the reference methods in `src/pcc.R`.
 
 ## Table of contents
 
-- [Methods validation](#methods-validation)
-  - [Table of contents](#table-of-contents)
-  - [How to use](#how-to-use)
-    - [Run in RStudio](#run-in-rstudio)
-    - [Run in pure R (CLI)](#run-in-pure-r-cli)
-  - [Modifying custom methods](#modifying-custom-methods)
-  - [Source data description](#source-data-description)
-  - [Notes](#notes)
+- [Table of contents](#table-of-contents)
+- [Quickstart](#quickstart)
+  - [Run in RStudio](#run-in-rstudio)
+  - [Run in pure R (CLI)](#run-in-pure-r-cli)
+- [Prerequisites](#prerequisites)
+- [Configuration](#configuration)
+- [What the script does](#what-the-script-does)
+- [Inputs / outputs](#inputs--outputs)
+- [Modifying custom methods](#modifying-custom-methods)
+- [Source data description](#source-data-description)
+- [Notes](#notes)
 
-## How to use
+## Quickstart
 
-Before running, you may want to review `static.yaml` (run configuration). Some important settings:
+Important: `index.R` currently enforces that your working directory contains the string `methods`:
 
-- `use_reml` - If set to true, `REML` will be used for Random-Effects calculation instead of the default `plm`.
-- `validate` - This node lists the individual validation steps. For each step that has a value set to `true`, the script will validate that the custom method yields the same results to the expected ones. To see how to modify the custom methods, read the [Modifying custom methods](#modifying-custom-methods) section.
+```r
+if (!grepl("methods", getwd())) {
+  stop("Please run this script from the 'methods' directory.")
+}
+```
+
+If this folder isn’t named `methods` (or doesn’t live under a `methods/` path), either run it from a path that matches that check or adjust the guard in `index.R`.
 
 ### Run in RStudio
 
-1. Open this folder as an RStudio project (or set your working directory to the root of this folder).
-1. Ensure dependencies are installed (see `packages.txt`). You can install missing packages via the RStudio Packages UI or by running `install.packages("<pkg>")`.
+1. Set your working directory to the root of this folder.
+1. Ensure dependencies are installed (see `packages.txt`).
+1. (Optional) Adjust run settings in `static.yaml`.
 1. Open `index.R` and run it.
 
 ### Run in pure R (CLI)
 
-1. From a shell, `cd` into this folder (the directory containing this `README.md`).
-1. Install dependencies from `packages.txt` (one package name per line):
+1. `cd` into the root of this folder.
+1. Ensure dependencies are installed (see [Prerequisites](#prerequisites)).
+1. Run:
+
+```bash
+Rscript index.R
+```
+
+## Prerequisites
+
+- R (and the ability to install CRAN packages).
+- Packages listed in `packages.txt`.
+
+To install any missing packages from `packages.txt`:
 
 ```r
 pkgs <- readLines("packages.txt", warn = FALSE)
@@ -39,24 +60,50 @@ missing <- pkgs[!pkgs %in% rownames(installed.packages())]
 if (length(missing) > 0) install.packages(missing)
 ```
 
-1. Run the script:
+## Configuration
 
-```bash
-Rscript index.R
-```
+Configuration lives in `static.yaml` and is read by `read_static()` at runtime. Common keys:
+
+- `file_name`: Input Excel file name under `data/` (default: `base.xlsx`).
+- `expected_stats_file_name`: Output Excel file name under `data/` (default: `expected_stats.xlsx`).
+- `re_method`: Random-effects “flavor” (e.g. `"DL"`, `"ML"`, `"REML"`, ...).
+- `re_method_fishers_z`: Same idea as `re_method`, but for Fisher’s Z.
+- `validate`: Toggles for individual validation steps (`pcc_var_1`, `pcc_var_2`, `re`, `uwls`, `uwls3`, `hsma`, `fishers_z`).
+- `separators`: Present in the YAML, but currently not used when reading Excel inputs.
+
+## What the script does
+
+Running `index.R`:
+
+- Sources all `*.R` files from `src/`.
+- Reads `static.yaml`.
+- Loads data from `data/<file_name>`.
+- Optionally validates PCC variance (offset 1/2) against `df$pcc_var_1` / `df$pcc_var_2`.
+- Computes the expected method results (reference implementations).
+- Optionally validates your custom implementations (`src/custom.R`) against the expected results.
+- Writes a summary of expected results to `data/<expected_stats_file_name>`.
+
+## Inputs / outputs
+
+- **Inputs**:
+  - `static.yaml`
+  - `data/<file_name>` (default: `data/base.xlsx`)
+- **Outputs**:
+  - `data/<expected_stats_file_name>` (default: `data/expected_stats.xlsx`, overwritten)
+  - Console messages; validation failures `stop()` the run
 
 ## Modifying custom methods
 
 By default, all methods have an expected result for the predefined set of data (`base.xlsx`). These are listed in `src/pcc.R`.
 
-If you wish to compare these against your custom method, **go to `src/custom.R`**. Here, I have laid out several placeholder functions, which calculate the results of one of several PCC methods. You can write down you custom code here, and the results of this code will be automatically compared against the expected results, yielded from the `pcc.R` scripts' methods.
+If you wish to compare these against your custom method, **go to `src/custom.R`**. There are placeholder functions you can replace with your own code; their results will be compared against the expected results produced by the reference methods in `src/pcc.R`.
 
 When defining the custom methods, keep in mind the following:
 
 - For `custom_pcc_variance`, the function **must return a numeric vector**. Otherwise, there are no restrictions.
 - For the other custom methods, **they must all return a list with two keys - `est` and `t_value`**. For example:
 
-  ```R
+  ```r
   # THIS IS A VALID RETURN
   my_list <- list(est = 1, t_value = 2)
   return(my_list)
@@ -67,9 +114,9 @@ When defining the custom methods, keep in mind the following:
   return(list(t_value = 2)) # Missing est
   ```
 
-- Each method accepts (among others) a `df` argument, as in _data frame_. This is the data frame, as you can see it in the `base.xlsx` file. Consequently, this allows you to easily access the effect, standard effect, and other variables easily using the following code:
+- Each method accepts (among others) a `df` argument, as in _data frame_. This is the data frame, as you can see it in the `base.xlsx` file. Consequently, this allows you to easily access the effect, standard error, and other variables using the following code:
 
-  ```R
+  ```r
   some_custom_function <- function(df) {
     effect <- df$effect
     se <- df$se
@@ -81,14 +128,14 @@ When defining the custom methods, keep in mind the following:
 
 ## Source data description
 
-The main data frame to test against, `base.xlsx`, is a single meta-analysis from the file `1. Aid and Growth journals.xlsx`. To make the computatinos smoother, the following modifications have been done to obtain this data frame:
+The main data frame to test against, `base.xlsx`, is a single meta-analysis from the file `1. Aid and Growth journals.xlsx`. To make the computations smoother, the following modifications have been done to obtain this data frame:
 
 - Renamed columns
 - Dropped rows which either do not report Partial Correlation Coefficient, effect size, or standard error.
 - T-value was imputed where missing in the following manner - `t_value = effect / se`.
-- Degrees of freedom were missing for all observations, and were thus imputed using the following function
+- Degrees of freedom were missing for all observations, and were thus imputed using the following function.
 
-  ```R
+  ```r
   fill_dof_using_pcc <- function(df) {
     pcc <- df$effect
     se <- df$se
@@ -110,7 +157,7 @@ The main data frame to test against, `base.xlsx`, is a single meta-analysis from
   }
   ```
 
-- PCC variance was calculated for two offsets - offset of 1, and offest of 2, using the function `pcc_variance` from the module `src/pcc.R:38`.
+- PCC variance was calculated for two offsets (1 and 2) using `pcc_variance` (see `src/pcc.R`).
 
 ## Notes
 
