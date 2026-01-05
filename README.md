@@ -7,20 +7,43 @@ This folder serves to validate the outcomes of several custom methods upon a set
 - [Methods validation](#methods-validation)
   - [Table of contents](#table-of-contents)
   - [How to use](#how-to-use)
+    - [Run in RStudio](#run-in-rstudio)
+    - [Run in pure R (CLI)](#run-in-pure-r-cli)
   - [Modifying custom methods](#modifying-custom-methods)
   - [Source data description](#source-data-description)
   - [Notes](#notes)
 
 ## How to use
 
-1. In RStudio, change the working directory to the root of this folder.
-1. Open the `packages.txt` file. Make sure you have all of the listed packages installed. If not, go ahead and install them either through `install.packages()`, or directly through the RStudio user interface (_packages_ section).
-1. Open the `static.yaml` file. Here, you can configure several static settings regarding the script run. Some, you can leave as is, while others might need to be modified. Here is an explanation of some important ones:
+Before running, you may want to review `static.yaml` (run configuration). Some important settings:
 
-   - `use_reml` - If set to true, `REML` will be used for Random-Effects calculation instead of the default `plm`.
-   - `validate` - This node lists the individual validation steps. For each step that has a value set to `true`, the script will validate that the custom method yields the same results to the expected ones. To see how to modify the custom methods, read the [Modifying custom methods](#modifying-custom-methods) section.
+- `use_reml` - If set to true, `REML` will be used for Random-Effects calculation instead of the default `plm`.
+- `validate` - This node lists the individual validation steps. For each step that has a value set to `true`, the script will validate that the custom method yields the same results to the expected ones. To see how to modify the custom methods, read the [Modifying custom methods](#modifying-custom-methods) section.
 
-1. Open the `index.R` script and run it.
+### Run in RStudio
+
+1. Open this folder as an RStudio project (or set your working directory to the root of this folder).
+1. Ensure dependencies are installed (see `packages.txt`). You can install missing packages via the RStudio Packages UI or by running `install.packages("<pkg>")`.
+1. Open `index.R` and run it.
+
+### Run in pure R (CLI)
+
+1. From a shell, `cd` into this folder (the directory containing this `README.md`).
+1. Install dependencies from `packages.txt` (one package name per line):
+
+```r
+pkgs <- readLines("packages.txt", warn = FALSE)
+pkgs <- trimws(pkgs)
+pkgs <- pkgs[nzchar(pkgs)]
+missing <- pkgs[!pkgs %in% rownames(installed.packages())]
+if (length(missing) > 0) install.packages(missing)
+```
+
+1. Run the script:
+
+```bash
+Rscript index.R
+```
 
 ## Modifying custom methods
 
