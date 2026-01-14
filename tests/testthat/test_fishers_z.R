@@ -1,19 +1,27 @@
 # Tests for fishers_z function
 
-test_that("fishers_z returns NA when all sample sizes are missing", {
-  # Create a data frame with all NA sample sizes
+test_that("fishers_z uses DOF when all sample sizes are missing", {
+  # Create a data frame with all NA sample sizes but DOF available
   df <- data.frame(
     effect = c(0.1, 0.2, 0.3),
     sample_size = c(NA_real_, NA_real_, NA_real_),
+    dof = c(93, 193, 293),  # DOF available as substitute (use directly as n)
     meta = "test_meta",
     study = c("study1", "study2", "study3")
   )
 
   result <- fishers_z(df, method = "ML")
 
-  # Should return NA for both est and t_value
-  expect_true(is.na(result$est))
-  expect_true(is.na(result$t_value))
+  # Should calculate using DOF directly as n (per Tom Stanley's guidance)
+  # SE = 1/sqrt(dof - 3), so should work with dof >= 4
+  # est and t_value should be numeric (not NA)
+  expect_true(is.numeric(result$est))
+  expect_false(is.na(result$est))
+  expect_true(is.numeric(result$t_value))
+  expect_false(is.na(result$t_value))
+  
+  # est should be between -1 and 1 (it's a correlation coefficient)
+  expect_true(result$est >= -1 && result$est <= 1)
 })
 
 test_that("fishers_z returns NA when all effects are invalid for Fisher's z transformation", {
@@ -22,6 +30,7 @@ test_that("fishers_z returns NA when all effects are invalid for Fisher's z tran
   df <- data.frame(
     effect = c(1.0, 1.0, 1.0), # Effect of 1.0 causes log((1+1)/(1-1)) = log(2/0) = Inf
     sample_size = c(10, 20, 30),
+    dof = c(3, 13, 23),  # DOF available
     meta = "test_meta",
     study = c("study1", "study2", "study3")
   )
@@ -38,6 +47,7 @@ test_that("fishers_z calculates correctly with some missing sample sizes", {
   df <- data.frame(
     effect = c(0.1, 0.2, 0.3, 0.4),
     sample_size = c(50, NA_real_, 100, 200),
+    dof = c(43, 93, 93, 193),  # DOF available as substitute
     meta = "test_meta",
     study = c("study1", "study2", "study3", "study4")
   )
@@ -64,6 +74,7 @@ test_that("fishers_z calculates correctly with no missing sample sizes", {
   df <- data.frame(
     effect = c(0.1, 0.2, 0.3),
     sample_size = c(50, 100, 150),
+    dof = c(43, 93, 143),  # DOF available
     meta = "test_meta",
     study = c("study1", "study2", "study3")
   )
@@ -85,6 +96,7 @@ test_that("fishers_z handles sample sizes that are too small", {
   df <- data.frame(
     effect = c(0.1, 0.2, 0.3),
     sample_size = c(2, 3, 4), # n-3 would be -1, 0, 1
+    dof = c(-5, -4, -3),  # DOF available (may be negative)
     meta = "test_meta",
     study = c("study1", "study2", "study3")
   )

@@ -14,7 +14,7 @@
   ```R
   uwls3 <- function(df) {
     t_ <- df$effect / df$se
-    dof_ <- dof_or_sample_size(df)
+    dof_ <- get_dof_or_sample_size(df, target = "dof")
 
     pcc_ <- t_ / sqrt(t_^2 + dof_ + 3) # dof_ + 3 ~~ sample_size - 7 + 3
     pcc_var_ <- (1 - pcc_^2) / (dof_ + 3) # dof_ + 3 ~~ sample_size - 7 + 3

@@ -1,9 +1,10 @@
 # Tests for pcc_sum_stats function
 
-test_that("pcc_sum_stats returns all NA when all sample sizes are missing", {
-  # Create a data frame with all NA sample sizes
+test_that("pcc_sum_stats returns all NA when all sample sizes and DOF are missing", {
+  # Create a data frame with all NA sample sizes and DOF
   df <- data.frame(
     sample_size = c(NA_real_, NA_real_, NA_real_),
+    dof = c(NA_real_, NA_real_, NA_real_),  # DOF also missing
     effect = c(0.1, 0.2, 0.3),
     se = c(0.05, 0.06, 0.07)
   )
@@ -29,8 +30,10 @@ test_that("pcc_sum_stats returns all NA when all sample sizes are missing", {
 
 test_that("pcc_sum_stats calculates correctly with some missing sample sizes", {
   # Create a data frame with some NA sample sizes
+  # When sample_size is missing, function uses dof + 7 as estimate
   df <- data.frame(
     sample_size = c(30, NA_real_, 100, 200, NA_real_),
+    dof = c(23, 93, 93, 193, 293),  # DOF available for missing sample sizes
     effect = c(0.1, 0.2, 0.3, 0.4, 0.5),
     se = c(0.05, 0.06, 0.07, 0.08, 0.09)
   )
@@ -40,22 +43,26 @@ test_that("pcc_sum_stats calculates correctly with some missing sample sizes", {
   # k_ should be total number of rows
   expect_equal(result$k_, 5)
 
-  # avg_n should be mean of non-NA values
-  expect_equal(result$avg_n, mean(c(30, 100, 200), na.rm = TRUE))
+  # avg_n should use sample_size where available, and dof+7 where missing
+  # Values: 30, (93+7=100), 100, 200, (293+7=300)
+  expected_values <- c(30, 100, 100, 200, 300)
+  expect_equal(result$avg_n, mean(expected_values))
 
-  # median_n should be median of non-NA values
-  expect_equal(result$median_n, stats::median(c(30, 100, 200), na.rm = TRUE))
+  # median_n should use the same values
+  expect_equal(result$median_n, stats::median(expected_values))
 
   # ss_lt statistics should be calculated correctly
+  # n_ values: 30, 100, 100, 200, 300
   expect_equal(result$ss_lt_50, 1 / 5) # 1 value < 50 out of 5 total (30)
-  expect_equal(result$ss_lt_100, 1 / 5) # 1 value < 100 out of 5 total (30)
-  expect_equal(result$ss_lt_200, 2 / 5) # 2 values < 200 out of 5 total (30, 100)
+  expect_equal(result$ss_lt_100, 1 / 5) # 1 value < 100 out of 5 total (30, since 100 is not < 100)
+  expect_equal(result$ss_lt_200, 3 / 5) # 3 values < 200 out of 5 total (30, 100, 100)
 })
 
 test_that("pcc_sum_stats calculates correctly with no missing sample sizes", {
   # Create a data frame with no NA sample sizes
   df <- data.frame(
     sample_size = c(30, 100, 150, 200, 250),
+    dof = c(23, 93, 143, 193, 243),  # DOF available
     effect = c(0.1, 0.2, 0.3, 0.4, 0.5),
     se = c(0.05, 0.06, 0.07, 0.08, 0.09)
   )
@@ -87,6 +94,7 @@ test_that("pcc_sum_stats handles empty data frame", {
   # Create an empty data frame
   df <- data.frame(
     sample_size = numeric(0),
+    dof = numeric(0),  # DOF column required
     effect = numeric(0),
     se = numeric(0)
   )

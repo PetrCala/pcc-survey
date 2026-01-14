@@ -213,9 +213,27 @@ pcc_sum_stats <- function(df, log_results = TRUE) {
   # For summary statistics, estimate sample size as dof + 7
   n_ <- get_dof_or_sample_size(df, target = "sample_size", use_dof_directly = FALSE)
 
-  if (log_results) {
-    logger::log_info("PCC analysis summary statistics:")
-    logger::log_info(paste("Number of PCC observations:", k_))
+  # Handle case where all n values are missing
+  if (all(is.na(n_))) {
+    res <- list(
+      k_ = k_,
+      avg_n = NA_real_,
+      median_n = NA_real_,
+      quantile_1_n = NA_real_,
+      quantile_3_n = NA_real_,
+      ss_lt_50 = NA_real_,
+      ss_lt_100 = NA_real_,
+      ss_lt_200 = NA_real_,
+      ss_lt_400 = NA_real_,
+      ss_lt_1600 = NA_real_,
+      ss_lt_3200 = NA_real_
+    )
+
+    if (log_results) {
+      logger::log_info("PCC analysis summary statistics:")
+      logger::log_info(paste("Number of PCC observations:", k_))
+    }
+    return(res)
   }
 
   quantiles <- stats::quantile(n_, probs = c(0.25, 0.75), na.rm = TRUE)
