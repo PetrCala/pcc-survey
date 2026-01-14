@@ -20,14 +20,14 @@ load_data <- function(file_name) {
   }
 
   if (!file.exists(full_path)) {
-    stop(paste("File", full_path, "does not exist."))
+    cli::cli_abort("File does not exist: {.file {full_path}}")
   }
 
   message("Reading data from ", full_path)
   df <- readxl::read_excel(path = full_path)
 
   if (ncol(df) < 2) {
-    stop("Data must have at least two columns.")
+    cli::cli_abort("Data must have at least two columns.")
   }
 
   message("Data loaded successfully.")
@@ -62,7 +62,20 @@ read_static <- function(path = NULL) {
   }
 
   if (!file.exists(path)) {
-    stop(paste("Static config file does not exist:", path))
+    cli::cli_abort("Static config file does not exist: {.file {path}}")
+  }
+
+  yaml::read_yaml(path)
+}
+
+#' Read and return the chris config YAML file as a list
+read_chris_config <- function(path = NULL) {
+  if (is.null(path)) {
+    path <- pccsurvey_extdata("chris_config.yaml")
+  }
+
+  if (!file.exists(path)) {
+    cli::cli_abort("Chris config file does not exist: {.file {path}}")
   }
 
   yaml::read_yaml(path)

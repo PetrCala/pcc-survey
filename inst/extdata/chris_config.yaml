@@ -1,0 +1,63 @@
+# Configuration for Chris analysis
+# Extracted from meta-facilitator/r/config.yaml
+
+# Data source
+data:
+  file_name: "chris_data.xlsx"
+  sheet_name: "Main"
+
+# Column mappings (source column names in Excel -> internal names)
+cols:
+  study: "Title"
+  effect_type: "Effect type"
+  effect: "Effect size"
+  se: "Standard error"
+  t_value: "t-stat"
+  sample_size: "Sample size"
+  dof: null  # Not present in source, will be calculated
+  meta: "Filename"
+  author1: "Author 1"
+  year: "Year published"
+
+# Analysis settings
+analysis:
+  pcc_identifier: "correlation"  # Effect type to filter for PCC studies
+  add_idx_column: true  # Add index column to output
+
+# Method settings
+methods:
+  re_method: "ML"  # Random effects method: "DL", "ML", "REML", etc.
+  re_method_fishers_z: "ML"  # RE method for Fisher's z
+
+# Data cleaning options
+cleaning:
+  clean_names: false  # Clean study/meta names with make.names()
+  recalculate_t_value: true  # Recalculate t-value from effect/se
+  fill_dof: true  # Fill missing degrees of freedom
+  fill_dof_conditions:
+    replace_existing: true  # Replace existing DOF values
+    drop_missing: false  # Drop rows with missing DOF after filling
+    drop_negative: false  # Drop rows with negative DOF
+    drop_zero: false  # Drop rows with zero DOF
+
+# Filtering
+filtering:
+  use_single_meta_analysis: null  # If set to a substring, filter to that meta-analysis only
+
+# Logging
+logging:
+  log_level: "INFO"  # DEBUG, INFO, WARN, ERROR, FATAL
+  log_to_console_only: false  # If true, don't write to file
+  log_file_name: "chris_analysis.log"
+  log_flush_on_setup: true  # Clear log file on startup
+
+# Caching
+caching:
+  use_cache: true  # Enable function result caching
+  cache_age: 3600  # Cache age in seconds (1 hour)
+  add_fn_name_to_cache_keys: true  # Include function name in cache keys
+
+# Output
+output:
+  file_name: "chris_results.csv"  # Output CSV file name
+  output_dir: "data"  # Output directory relative to project root

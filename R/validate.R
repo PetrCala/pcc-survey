@@ -1,15 +1,15 @@
 validate_vector <- function(custom_vector, expected_vector) {
   if (length(custom_vector) != length(expected_vector)) {
-    stop("The custom vector and the expected vector are not of the same length.")
+    cli::cli_abort("The custom vector and the expected vector are not of the same length.")
   }
 
   if (!identical(class(custom_vector), class(expected_vector))) {
-    stop("The custom vector and the expected vector are not of the same type.")
+    cli::cli_abort("The custom vector and the expected vector are not of the same type.")
   }
 
   cmp <- all.equal(custom_vector, expected_vector)
   if (!isTRUE(cmp)) {
-    stop(paste0("The custom vector and the expected vector are not equal: ", cmp))
+    cli::cli_abort("The custom vector and the expected vector are not equal: {cmp}")
   }
 
   message("Validation successful.")

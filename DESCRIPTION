@@ -6,17 +6,21 @@ Description: Validates outcomes of custom meta-analysis methods on a controlled 
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.2
+RoxygenNote: 7.3.3
 Imports:
+    cachem,
+    cli,
     data.table,
+    logger,
+    memoise,
     metafor,
     plm,
     readxl,
     stats,
+    utils,
     writexl,
     yaml
 Suggests:
     devtools,
     lintr,
     roxygen2
-

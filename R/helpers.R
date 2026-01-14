@@ -3,7 +3,7 @@
 assert_required_cols <- function(df, cols) {
   missing <- setdiff(cols, names(df))
   if (length(missing) > 0) {
-    stop(paste0("Missing required columns: ", paste(missing, collapse = ", ")))
+    cli::cli_abort("Missing required columns: {.val {missing}}")
   }
   invisible(TRUE)
 }
