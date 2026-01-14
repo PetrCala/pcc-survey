@@ -111,7 +111,7 @@ uwls3 <- function(df) {
 
   # Prefer DoF when present; when missing, follow project convention and impute
   # as sample_size - 7.
-  dof_ <- dof_or_sample_size(df, offset = 0)
+  dof_ <- get_dof_or_sample_size(df, target = "dof", offset = 0)
 
   t_ <- df$effect / df$se
 
@@ -145,10 +145,15 @@ hsma <- function(df) {
   meta <- unique(df$meta)
   stopifnot(sum(is.na(df$effect)) == 0)
 
-  missing_sample_sizes <- sum(is.na(df$sample_size))
-  if (missing_sample_sizes > 0) {
-    logger::log_info(paste("Dropping", missing_sample_sizes, "missing sample sizes for meta-analysis", meta))
-    df <- df[!is.na(df$sample_size), ]
+  # Use DOF as substitute for sample size when missing
+  n_ <- get_dof_or_sample_size(df, target = "sample_size", use_dof_directly = TRUE)
+
+  # Drop rows where both sample_size and dof are missing
+  missing_n <- is.na(n_)
+  if (any(missing_n)) {
+    logger::log_info(paste("Dropping", sum(missing_n), "rows with missing sample size and DOF for meta-analysis", meta))
+    df <- df[!missing_n, ]
+    n_ <- n_[!missing_n]
   }
 
   if (nrow(df) == 0) {
@@ -156,7 +161,6 @@ hsma <- function(df) {
     return(list(est = NA, t_value = NA))
   }
 
-  n_ <- df$sample_size
   effect <- df$effect
   r_avg <- sum(n_ * effect) / sum(n_)
   sd_sq <- sum(n_ * ((effect - r_avg)^2)) / sum(n_) # SD_r^2
@@ -172,7 +176,9 @@ hsma <- function(df) {
 #' @export
 fishers_z <- function(df, method = "ML") {
   meta <- unique(df$meta)
-  n_ <- df$sample_size # Q: sample size here, not df?
+
+  # Use DOF as substitute for sample size when missing
+  n_ <- get_dof_or_sample_size(df, target = "sample_size", use_dof_directly = TRUE)
 
   suppressWarnings( # Sometimes the log produces NaNs - handled below
     fishers_z_ <- 0.5 * log((1 + df$effect) / (1 - df$effect))
@@ -203,44 +209,29 @@ fishers_z <- function(df, method = "ML") {
 pcc_sum_stats <- function(df, log_results = TRUE) {
   k_ <- nrow(df)
 
-  # Handle case where all sample sizes are missing
-  if (all(is.na(df$sample_size))) {
-    res <- list(
-      k_ = k_,
-      avg_n = NA_real_,
-      median_n = NA_real_,
-      quantile_1_n = NA_real_,
-      quantile_3_n = NA_real_,
-      ss_lt_50 = NA_real_,
-      ss_lt_100 = NA_real_,
-      ss_lt_200 = NA_real_,
-      ss_lt_400 = NA_real_,
-      ss_lt_1600 = NA_real_,
-      ss_lt_3200 = NA_real_
-    )
+  # Use DOF as n when sample_size is missing (Use df instead of sample size)
+  # For summary statistics, estimate sample size as dof + 7
+  n_ <- get_dof_or_sample_size(df, target = "sample_size", use_dof_directly = FALSE)
 
-    if (log_results) {
-      logger::log_info("PCC analysis summary statistics:")
-      logger::log_info(paste("Number of PCC observations:", k_))
-    }
-    return(res)
+  if (log_results) {
+    logger::log_info("PCC analysis summary statistics:")
+    logger::log_info(paste("Number of PCC observations:", k_))
   }
 
-  quantiles <- stats::quantile(df$sample_size, probs = c(0.25, 0.75), na.rm = TRUE)
+  quantiles <- stats::quantile(n_, probs = c(0.25, 0.75), na.rm = TRUE)
 
   # ss_lt ~ sample sizes less than
   get_ss_lt <- function(lt) {
-    # Q: Should the sample sizes be dropped if they are missing?
-    if (sum(is.na(df$sample_size)) == nrow(df)) {
+    if (all(is.na(n_))) {
       return(NA)
-    } # No sample sizes
-    sum(df$sample_size < lt, na.rm = TRUE) / k_
+    }
+    sum(n_ < lt, na.rm = TRUE) / k_
   }
 
   res <- list(
     k_ = k_,
-    avg_n = mean(df$sample_size, na.rm = TRUE),
-    median_n = stats::median(df$sample_size, na.rm = TRUE),
+    avg_n = mean(n_, na.rm = TRUE),
+    median_n = stats::median(n_, na.rm = TRUE),
     quantile_1_n = as.numeric(quantiles[1]),
     quantile_3_n = as.numeric(quantiles[2]),
     ss_lt_50 = get_ss_lt(50),
