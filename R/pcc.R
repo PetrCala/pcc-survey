@@ -202,6 +202,30 @@ fishers_z <- function(df, method = "ML") {
 #' @export
 pcc_sum_stats <- function(df, log_results = TRUE) {
   k_ <- nrow(df)
+
+  # Handle case where all sample sizes are missing
+  if (all(is.na(df$sample_size))) {
+    res <- list(
+      k_ = k_,
+      avg_n = NA_real_,
+      median_n = NA_real_,
+      quantile_1_n = NA_real_,
+      quantile_3_n = NA_real_,
+      ss_lt_50 = NA_real_,
+      ss_lt_100 = NA_real_,
+      ss_lt_200 = NA_real_,
+      ss_lt_400 = NA_real_,
+      ss_lt_1600 = NA_real_,
+      ss_lt_3200 = NA_real_
+    )
+
+    if (log_results) {
+      logger::log_info("PCC analysis summary statistics:")
+      logger::log_info(paste("Number of PCC observations:", k_))
+    }
+    return(res)
+  }
+
   quantiles <- stats::quantile(df$sample_size, probs = c(0.25, 0.75), na.rm = TRUE)
 
   # ss_lt ~ sample sizes less than
