@@ -47,6 +47,26 @@ get_chris_metaflavours <- function(df, re_method = "ML", re_method_fishers_z = "
   as.data.frame(results)
 }
 
+#' Helper function to call a function with optional caching based on config
+#'
+#' @param config [list] Configuration list
+#' @param f [function] The function to call
+#' @param ... Arguments to pass to the function
+#' @return The result of calling f(...)
+maybe_cached <- function(config, f, ...) {
+  if (config$caching$use_cache) {
+    run_cached_function(
+      f = f,
+      ...,
+      use_cache = TRUE,
+      cache_dir = "_cache",
+      cache_age = config$caching$cache_age
+    )
+  } else {
+    f(...)
+  }
+}
+
 #' Run the Chris analysis
 #'
 #' @param config [list] Configuration list loaded from chris_config.yaml
@@ -56,42 +76,22 @@ chris_analyse <- function(config) {
   logger::log_info("Running the chris analysis")
 
   # Read the data (with caching if enabled)
-  if (config$caching$use_cache) {
-    df <- run_cached_function(
-      f = read_chris_data,
-      file_name = config$data$file_name,
-      sheet_name = config$data$sheet_name,
-      use_cache = TRUE,
-      cache_dir = "_cache",
-      cache_age = config$caching$cache_age
-    )
-  } else {
-    df <- read_chris_data(
-      file_name = config$data$file_name,
-      sheet_name = config$data$sheet_name
-    )
-  }
+  df <- maybe_cached(
+    config,
+    read_chris_data,
+    file_name = config$data$file_name,
+    sheet_name = config$data$sheet_name
+  )
 
   # Clean the data (with caching if enabled)
-  if (config$caching$use_cache) {
-    df <- run_cached_function(
-      f = clean_chris_data,
-      df = df,
-      cols = config$cols,
-      clean_names = config$cleaning$clean_names,
-      recalculate_t_value = config$cleaning$recalculate_t_value,
-      use_cache = TRUE,
-      cache_dir = "_cache",
-      cache_age = config$caching$cache_age
-    )
-  } else {
-    df <- clean_chris_data(
-      df = df,
-      cols = config$cols,
-      clean_names = config$cleaning$clean_names,
-      recalculate_t_value = config$cleaning$recalculate_t_value
-    )
-  }
+  df <- maybe_cached(
+    config,
+    clean_chris_data,
+    df = df,
+    cols = config$cols,
+    clean_names = config$cleaning$clean_names,
+    recalculate_t_value = config$cleaning$recalculate_t_value
+  )
 
   # Optionally subset to single meta-analysis
   meta_substring <- config$filtering$use_single_meta_analysis
@@ -102,25 +102,14 @@ chris_analyse <- function(config) {
   }
 
   # Run the PCC analysis - use pcc studies only (with caching if enabled)
-  if (config$caching$use_cache) {
-    pcc_df <- run_cached_function(
-      f = get_pcc_data,
-      df = data.table::copy(df),
-      pcc_identifier = config$analysis$pcc_identifier,
-      fill_dof = config$cleaning$fill_dof,
-      fill_dof_conditions = config$cleaning$fill_dof_conditions,
-      use_cache = TRUE,
-      cache_dir = "_cache",
-      cache_age = config$caching$cache_age
-    )
-  } else {
-    pcc_df <- get_pcc_data(
-      df = data.table::copy(df),
-      pcc_identifier = config$analysis$pcc_identifier,
-      fill_dof = config$cleaning$fill_dof,
-      fill_dof_conditions = config$cleaning$fill_dof_conditions
-    )
-  }
+  pcc_df <- maybe_cached(
+    config,
+    get_pcc_data,
+    df = data.table::copy(df),
+    pcc_identifier = config$analysis$pcc_identifier,
+    fill_dof = config$cleaning$fill_dof,
+    fill_dof_conditions = config$cleaning$fill_dof_conditions
+  )
 
   log_dataframe_info(df = pcc_df, colnames_to_analyse = c("study", "meta"))
 
