@@ -29,9 +29,11 @@ make setup
 make run
 ```
 
+**Note**: The `make run` command runs the Chris analysis workflow. For this to work, you need to have the `chris_data.xlsx` file in the `data/` folder (see [Chris Analysis Data](#chris-analysis-data) below).
+
 Outputs:
 
-- `data/expected_stats.xlsx` (overwritten on each run)
+- `data/chris_results.csv` (overwritten on each run)
 
 ### Run in RStudio (optional)
 
@@ -111,24 +113,24 @@ Configuration is shipped in `inst/extdata/static.yaml` and is read by `read_stat
 
 ## What the script does
 
-Running `make run` (or `run_validation()`):
+Running `make run` (or `run_chris_analysis()`):
 
 - Loads the package code from `R/`.
-- Reads config from `inst/extdata/static.yaml` (by default).
-- Loads data from the shipped `inst/extdata/<file_name>` (by default).
-- Optionally validates PCC variance (offset 1/2) against `df$pcc_var_1` / `df$pcc_var_2`.
-- Computes the expected method results (reference implementations).
-- Optionally validates your custom implementations (`R/custom.R`) against the expected results.
-- Writes a summary of expected results to `data/<expected_stats_file_name>`.
+- Reads config from `inst/extdata/chris_config.yaml`.
+- Loads data from `data/chris_data.xlsx` (see [Chris Analysis Data](#chris-analysis-data) section).
+- Cleans and preprocesses the data (filters to PCC studies, fills missing DOF, calculates PCC variance).
+- Calculates meta-analysis statistics for each individual meta-analysis using multiple methods (RE, UWLS, UWLS+3, HSMA, Fisher's Z).
+- Calculates statistics for all meta-analyses combined.
+- Writes results to `data/chris_results.csv`.
 
 ## Inputs / outputs
 
 - **Inputs**:
-  - `inst/extdata/static.yaml`
-  - `inst/extdata/<file_name>` (default: `inst/extdata/base.xlsx`)
+  - `inst/extdata/chris_config.yaml` - Configuration for the Chris analysis
+  - `data/chris_data.xlsx` - The analysis data file (must be provided by the user, see [Chris Analysis Data](#chris-analysis-data))
 - **Outputs**:
-  - `data/<expected_stats_file_name>` (default: `data/expected_stats.xlsx`, overwritten)
-  - Console messages; validation failures `stop()` the run
+  - `data/chris_results.csv` - Analysis results with statistics for each meta-analysis (overwritten on each run)
+  - `logs/chris_analysis_YYYYMMDD_HHMMSS.log` - Timestamped log file with detailed execution information
 
 ## Modifying custom methods
 
@@ -196,6 +198,24 @@ The main data frame to test against, `base.xlsx`, is a single meta-analysis from
   ```
 
 - PCC variance was calculated for two offsets (1 and 2) using `pcc_variance` (see `R/pcc.R`).
+
+## Chris Analysis Data
+
+The Chris analysis requires an external data file that is not included in the repository:
+
+1. **Download the source file**: The original file is typically named something like `Copy of all_datasets_combined End 2023.xlsx` and contains over 200,000 rows of meta-analysis data.
+
+2. **Place and rename the file**:
+   - Copy the file to the `data/` folder in the repository root
+   - Rename it to `chris_data.xlsx`
+   - The file should have a sheet named `"Main"` containing the data
+
+3. **Verify the file**: After placing the file, you can verify it's in the correct location:
+   ```bash
+   ls -lh data/chris_data.xlsx
+   ```
+
+The analysis will read from `data/chris_data.xlsx` when you run `make run`. If the file is missing, you'll get an error indicating the data file was not found.
 
 ## Notes
 
