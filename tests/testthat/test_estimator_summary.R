@@ -13,14 +13,15 @@ test_that("calculate_estimator_summary excludes 'All meta-analyses' row", {
 
   result <- calculate_estimator_summary(df)
 
-  # Should have 5 rows (one per estimator)
-  expect_equal(nrow(result), 5)
+  # Should have 10 rows (one per statistic)
+  expect_equal(nrow(result), 10)
+
+  # Should have Statistic column plus 5 estimator columns
+  expect_equal(ncol(result), 6)
 
   # RE mean should be mean of 0.1, 0.2, 0.3 (excluding 0.15 from "All meta-analyses")
-  re_row <- result[result$Estimator == "RE", ]
-  expect_equal(re_row$Mean, mean(c(0.1, 0.2, 0.3)))
-  expect_equal(re_row$Median, median(c(0.1, 0.2, 0.3)))
-  expect_equal(re_row$SD, sd(c(0.1, 0.2, 0.3)))
+  mean_row <- result[result$Statistic == "Mean", ]
+  expect_equal(mean_row$RE, mean(c(0.1, 0.2, 0.3)))
 })
 
 test_that("calculate_estimator_summary calculates correct statistics", {
@@ -36,17 +37,20 @@ test_that("calculate_estimator_summary calculates correct statistics", {
 
   result <- calculate_estimator_summary(df)
 
+  # Check count
+  count_row <- result[result$Statistic == "count", ]
+  expect_equal(count_row$RE, 3L)
+  expect_equal(count_row$UWLS, 3L)
+
   # Check RE statistics
-  re_row <- result[result$Estimator == "RE", ]
-  expect_equal(re_row$Mean, 0.2)
-  expect_equal(re_row$Median, 0.2)
-  expect_equal(re_row$SD, sd(c(0.1, 0.2, 0.3)), tolerance = 1e-10)
+  expect_equal(result[result$Statistic == "Mean", ]$RE, 0.2)
+  expect_equal(result[result$Statistic == "median", ]$RE, 0.2)
+  expect_equal(result[result$Statistic == "SD", ]$RE, sd(c(0.1, 0.2, 0.3)), tolerance = 1e-10)
 
   # Check UWLS statistics
-  uwls_row <- result[result$Estimator == "UWLS", ]
-  expect_equal(uwls_row$Mean, 0.25)
-  expect_equal(uwls_row$Median, 0.25)
-  expect_equal(uwls_row$SD, sd(c(0.15, 0.25, 0.35)), tolerance = 1e-10)
+  expect_equal(result[result$Statistic == "Mean", ]$UWLS, 0.25)
+  expect_equal(result[result$Statistic == "median", ]$UWLS, 0.25)
+  expect_equal(result[result$Statistic == "SD", ]$UWLS, sd(c(0.15, 0.25, 0.35)), tolerance = 1e-10)
 })
 
 test_that("calculate_estimator_summary handles NA values correctly", {
@@ -63,22 +67,22 @@ test_that("calculate_estimator_summary handles NA values correctly", {
   result <- calculate_estimator_summary(df)
 
   # RE should use only non-NA values (0.1, 0.3)
-  re_row <- result[result$Estimator == "RE", ]
-  expect_equal(re_row$Mean, mean(c(0.1, 0.3)))
-  expect_equal(re_row$Median, median(c(0.1, 0.3)))
-  expect_equal(re_row$SD, sd(c(0.1, 0.3)), tolerance = 1e-10)
+  expect_equal(result[result$Statistic == "Mean", ]$RE, mean(c(0.1, 0.3)))
+  expect_equal(result[result$Statistic == "median", ]$RE, median(c(0.1, 0.3)))
+  expect_equal(result[result$Statistic == "SD", ]$RE, sd(c(0.1, 0.3)), tolerance = 1e-10)
+  expect_equal(result[result$Statistic == "missing", ]$RE, 1L)
 
   # UWLS should use only non-NA values (0.15, 0.25)
-  uwls_row <- result[result$Estimator == "UWLS", ]
-  expect_equal(uwls_row$Mean, mean(c(0.15, 0.25)))
-  expect_equal(uwls_row$Median, median(c(0.15, 0.25)))
-  expect_equal(uwls_row$SD, sd(c(0.15, 0.25)), tolerance = 1e-10)
+  expect_equal(result[result$Statistic == "Mean", ]$UWLS, mean(c(0.15, 0.25)))
+  expect_equal(result[result$Statistic == "median", ]$UWLS, median(c(0.15, 0.25)))
+  expect_equal(result[result$Statistic == "SD", ]$UWLS, sd(c(0.15, 0.25)), tolerance = 1e-10)
+  expect_equal(result[result$Statistic == "missing", ]$UWLS, 1L)
 
-  # HSMA with all NA should return NA for all statistics
-  hsma_row <- result[result$Estimator == "HSMA", ]
-  expect_true(is.na(hsma_row$Mean))
-  expect_true(is.na(hsma_row$Median))
-  expect_true(is.na(hsma_row$SD))
+  # HSMA with all NA should return NA for numeric statistics
+  expect_true(is.na(result[result$Statistic == "Mean", ]$HSMA))
+  expect_true(is.na(result[result$Statistic == "median", ]$HSMA))
+  expect_true(is.na(result[result$Statistic == "SD", ]$HSMA))
+  expect_equal(result[result$Statistic == "missing", ]$HSMA, 3L)
 })
 
 test_that("calculate_estimator_summary has correct column names and structure", {
@@ -93,16 +97,19 @@ test_that("calculate_estimator_summary has correct column names and structure", 
 
   result <- calculate_estimator_summary(df)
 
-  # Check column names
-  expect_equal(colnames(result), c("Estimator", "Mean", "Median", "SD"))
+  # Check column names - should have Statistic plus estimator columns
+  expect_true("Statistic" %in% colnames(result))
+  expect_true(all(c("RE", "UWLS", "UWLS3", "HSMA", "Fisher's z") %in% colnames(result)))
 
-  # Check that all estimators are present
-  expect_true(all(c("RE", "UWLS", "UWLS3", "HSMA", "Fisher's z") %in% result$Estimator))
+  # Check that all statistics are present
+  expected_stats <- c("count", "minimum", "max", "missing", "skewness", "median", "IQR", "trimmed_mean_10", "Mean", "SD")
+  expect_equal(sort(result$Statistic), sort(expected_stats))
 
-  # Check that all statistics are numeric
-  expect_true(is.numeric(result$Mean))
-  expect_true(is.numeric(result$Median))
-  expect_true(is.numeric(result$SD))
+  # Check that count and missing have integer values (may be stored as double in data frame)
+  count_val <- result[result$Statistic == "count", ]$RE
+  missing_val <- result[result$Statistic == "missing", ]$RE
+  expect_equal(count_val, as.integer(count_val)) # Value is an integer
+  expect_equal(missing_val, as.integer(missing_val)) # Value is an integer
 })
 
 test_that("calculate_estimator_summary handles single meta-analysis", {
@@ -119,11 +126,51 @@ test_that("calculate_estimator_summary handles single meta-analysis", {
   result <- calculate_estimator_summary(df)
 
   # Should still work with single value
-  re_row <- result[result$Estimator == "RE", ]
-  expect_equal(re_row$Mean, 0.1)
-  expect_equal(re_row$Median, 0.1)
+  expect_equal(result[result$Statistic == "Mean", ]$RE, 0.1)
+  expect_equal(result[result$Statistic == "median", ]$RE, 0.1)
   # SD of single value is NA in R
-  expect_true(is.na(re_row$SD))
+  expect_true(is.na(result[result$Statistic == "SD", ]$RE))
+  # Skewness of single value is NA
+  expect_true(is.na(result[result$Statistic == "skewness", ]$RE))
+  # IQR of single value is NA
+  expect_true(is.na(result[result$Statistic == "IQR", ]$RE))
+})
+
+test_that("calculate_estimator_summary calculates IQR correctly", {
+  df <- data.frame(
+    meta = c("Meta1", "Meta2", "Meta3", "Meta4", "Meta5"),
+    re_est = c(0.1, 0.2, 0.3, 0.4, 0.5),
+    uwls_est = c(0.15, 0.25, 0.35, 0.45, 0.55),
+    uwls3_est = c(0.12, 0.22, 0.32, 0.42, 0.52),
+    hsma_est = c(0.11, 0.21, 0.31, 0.41, 0.51),
+    fishers_z_est = c(0.13, 0.23, 0.33, 0.43, 0.53)
+  )
+
+  result <- calculate_estimator_summary(df)
+
+  # IQR should be Q3 - Q1
+  re_iqr <- result[result$Statistic == "IQR", ]$RE
+  re_quantiles <- quantile(c(0.1, 0.2, 0.3, 0.4, 0.5), probs = c(0.25, 0.75))
+  expected_iqr <- as.numeric(re_quantiles[2]) - as.numeric(re_quantiles[1])
+  expect_equal(re_iqr, expected_iqr, tolerance = 1e-10)
+})
+
+test_that("calculate_estimator_summary calculates trimmed mean correctly", {
+  df <- data.frame(
+    meta = c("Meta1", "Meta2", "Meta3", "Meta4", "Meta5"),
+    re_est = c(0.1, 0.2, 0.3, 0.4, 0.5),
+    uwls_est = c(0.15, 0.25, 0.35, 0.45, 0.55),
+    uwls3_est = c(0.12, 0.22, 0.32, 0.42, 0.52),
+    hsma_est = c(0.11, 0.21, 0.31, 0.41, 0.51),
+    fishers_z_est = c(0.13, 0.23, 0.33, 0.43, 0.53)
+  )
+
+  result <- calculate_estimator_summary(df)
+
+  # Trimmed mean should match mean(..., trim = 0.1)
+  re_trimmed <- result[result$Statistic == "trimmed_mean_10", ]$RE
+  expected_trimmed <- mean(c(0.1, 0.2, 0.3, 0.4, 0.5), trim = 0.1)
+  expect_equal(re_trimmed, expected_trimmed, tolerance = 1e-10)
 })
 
 test_that("save_estimator_summary writes file correctly", {
@@ -132,10 +179,9 @@ test_that("save_estimator_summary writes file correctly", {
   dir.create(test_dir)
 
   summary_df <- data.frame(
-    Estimator = c("RE", "UWLS"),
-    Mean = c(0.2, 0.25),
-    Median = c(0.2, 0.25),
-    SD = c(0.1, 0.1)
+    Statistic = c("count", "Mean"),
+    RE = c(3L, 0.2),
+    UWLS = c(3L, 0.25)
   )
 
   # Save the file
@@ -152,8 +198,8 @@ test_that("save_estimator_summary writes file correctly", {
   # Read and verify contents
   saved_df <- read.csv(output_path)
   expect_equal(nrow(saved_df), 2)
-  expect_equal(colnames(saved_df), c("Estimator", "Mean", "Median", "SD"))
-  expect_equal(saved_df$Estimator, c("RE", "UWLS"))
+  expect_true("Statistic" %in% colnames(saved_df))
+  expect_true(all(c("RE", "UWLS") %in% colnames(saved_df)))
 
   # Clean up
   unlink(test_dir, recursive = TRUE)

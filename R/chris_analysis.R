@@ -134,12 +134,13 @@ chris_analyse <- function(config) {
 
 #' Calculate estimator summary statistics across meta-analyses
 #'
-#' Calculates mean, median, and standard deviation for each estimator
+#' Calculates comprehensive summary statistics for each estimator
 #' across all individual meta-analyses (excludes "All meta-analyses" row).
 #' This produces Table 1 from the analysis.
+#' Statistics are returned with estimators as columns and statistics as rows.
 #'
 #' @param results_df [data.frame] Results from chris_analyse() containing estimator columns
-#' @return [data.frame] Summary table with columns: Estimator, Mean, Median, SD
+#' @return [data.frame] Summary table with statistics as rows and estimators as columns
 #' @export
 calculate_estimator_summary <- function(results_df) {
   # Filter out "All meta-analyses" row
@@ -161,39 +162,99 @@ calculate_estimator_summary <- function(results_df) {
     "fishers_z_est" = "Fisher's z"
   )
 
-  # Calculate statistics for each estimator
-  summary_list <- lapply(estimator_cols, function(col) {
-    values <- individual_metas[[col]]
-    # Remove NA values for calculations
-    values_clean <- values[!is.na(values)]
-
-    if (length(values_clean) == 0) {
-      list(
-        Estimator = if (col %in% names(estimator_names)) estimator_names[[col]] else col,
-        Mean = NA_real_,
-        Median = NA_real_,
-        SD = NA_real_
-      )
-    } else {
-      list(
-        Estimator = if (col %in% names(estimator_names)) estimator_names[[col]] else col,
-        Mean = mean(values_clean),
-        Median = median(values_clean),
-        SD = sd(values_clean)
-      )
+  # Helper function to calculate skewness
+  calculate_skewness <- function(x) {
+    if (length(x) < 3) {
+      return(NA_real_)
     }
+    x_centered <- x - mean(x)
+    n <- length(x)
+    numerator <- sum(x_centered^3) / n
+    denominator <- (sum(x_centered^2) / n)^(3 / 2)
+    if (denominator == 0) {
+      return(NA_real_)
+    }
+    numerator / denominator
+  }
+
+  # Calculate statistics for each estimator
+  summary_stats <- lapply(estimator_cols, function(col) {
+    values <- individual_metas[[col]]
+    values_clean <- values[!is.na(values)]
+    n_total <- length(values)
+    n_missing <- sum(is.na(values))
+    n_valid <- length(values_clean)
+
+    # Common values for all cases
+    count_val <- as.integer(n_total)
+    missing_val <- as.integer(n_missing)
+
+    # Calculate statistics based on number of valid values
+    if (n_valid == 0) {
+      # All values are NA
+      minimum <- max_val <- skewness <- median_val <- iqr <- trimmed_mean <- mean_val <- sd_val <- NA_real_
+    } else if (n_valid == 1) {
+      # Single value - some stats are undefined
+      minimum <- max_val <- median_val <- trimmed_mean <- mean_val <- values_clean
+      skewness <- iqr <- sd_val <- NA_real_
+    } else {
+      # Multiple values - calculate all statistics
+      quantiles <- stats::quantile(values_clean, probs = c(0.25, 0.5, 0.75), na.rm = TRUE)
+      minimum <- min(values_clean)
+      max_val <- max(values_clean)
+      skewness <- calculate_skewness(values_clean)
+      median_val <- quantiles[2] # 50th percentile
+      iqr <- quantiles[3] - quantiles[1] # Q3 - Q1
+      trimmed_mean <- mean(values_clean, trim = 0.1)
+      mean_val <- mean(values_clean)
+      sd_val <- sd(values_clean)
+    }
+
+    # Return as named list
+    list(
+      count = count_val,
+      minimum = minimum,
+      max = max_val,
+      missing = missing_val,
+      skewness = skewness,
+      median = median_val,
+      IQR = iqr,
+      trimmed_mean_10 = trimmed_mean,
+      Mean = mean_val,
+      SD = sd_val
+    )
   })
 
-  # Convert to data frame
-  summary_df <- do.call(rbind, lapply(summary_list, function(x) {
-    data.frame(
-      Estimator = x$Estimator,
-      Mean = x$Mean,
-      Median = x$Median,
-      SD = x$SD,
-      stringsAsFactors = FALSE
-    )
-  }))
+  # Create data frame with statistics as rows and estimators as columns
+  stat_names <- c("count", "minimum", "max", "missing", "skewness", "median", "IQR", "trimmed_mean_10", "Mean", "SD")
+  summary_df <- data.frame(
+    Statistic = stat_names,
+    stringsAsFactors = FALSE
+  )
+
+  # Calculate indices for integer statistics (calculated once)
+  count_idx <- which(stat_names == "count")
+  missing_idx <- which(stat_names == "missing")
+
+  # Add each estimator as a column
+  for (i in seq_along(estimator_cols)) {
+    col <- estimator_cols[i]
+    estimator_name <- if (col %in% names(estimator_names)) estimator_names[[col]] else col
+    stats_for_col <- summary_stats[[i]]
+
+    # Build values vector, handling integers separately
+    values <- numeric(length(stat_names))
+    for (j in seq_along(stat_names)) {
+      stat <- stat_names[j]
+      if (j == count_idx || j == missing_idx) {
+        values[j] <- as.integer(stats_for_col[[stat]])
+      } else {
+        values[j] <- as.numeric(stats_for_col[[stat]])
+      }
+    }
+
+    summary_df[[estimator_name]] <- values
+  }
 
   summary_df
 }
