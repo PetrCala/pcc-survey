@@ -383,3 +383,68 @@ get_pcc_data <- function(df, pcc_identifier = "correlation", fill_dof = TRUE, fi
 
   df
 }
+
+#' Convert inverse relationships to positive for comparability
+#'
+#' For each meta-analysis, if the mean PCC is negative, multiply all PCCs by -1.
+#' This ensures all meta-analyses are measured in the same direction (positive correlations).
+#' Also flips t-values to maintain the relationship t = effect/se.
+#'
+#' @param df [data.frame] The PCC data frame with 'meta' and 'effect' columns
+#' @param log_results [logical] Whether to log conversion information. Default: TRUE
+#' @return [data.frame] The data frame with converted effects (and t-values)
+#' @export
+convert_inverse_relationships <- function(df, log_results = TRUE) {
+  validate_columns(df, c("meta", "effect"))
+
+  # Split by meta-analysis
+  meta_list <- split(df, df$meta)
+  converted_metas <- character(0)
+  n_converted <- 0
+
+  # Process each meta-analysis
+  for (meta_name in names(meta_list)) {
+    meta_df <- meta_list[[meta_name]]
+
+    # Calculate mean PCC for this meta-analysis
+    mean_effect <- mean(meta_df$effect, na.rm = TRUE)
+
+    # Skip if mean is NA (all effects are NA)
+    if (is.na(mean_effect)) {
+      if (log_results) {
+        logger::log_debug(paste("Skipping conversion for meta-analysis", meta_name, "- all effects are NA"))
+      }
+      next
+    }
+
+    # If mean is negative, flip all effects and t-values
+    if (mean_effect < 0) {
+      # Flip effects
+      meta_df$effect <- meta_df$effect * -1
+
+      # Flip t-values to maintain t = effect/se relationship
+      if ("t_value" %in% colnames(meta_df)) {
+        meta_df$t_value <- meta_df$t_value * -1
+      }
+
+      # Update the meta_df in the list
+      meta_list[[meta_name]] <- meta_df
+      converted_metas <- c(converted_metas, meta_name)
+      n_converted <- n_converted + 1
+
+      if (log_results) {
+        logger::log_info(paste("Converted inverse relationships for meta-analysis:", meta_name, "(mean PCC:", round(mean_effect, 4), ")"))
+      }
+    }
+  }
+
+  # Recombine all meta-analyses
+  result_df <- do.call(rbind, meta_list)
+  rownames(result_df) <- NULL # Reset row names
+
+  if (log_results && n_converted > 0) {
+    logger::log_info(paste("Converted", n_converted, "meta-analysis(es) with negative mean PCCs for comparability"))
+  }
+
+  result_df
+}

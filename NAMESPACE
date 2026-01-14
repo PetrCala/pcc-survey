@@ -1,6 +1,7 @@
 # Generated manually for this repo. If you later adopt roxygen2 docs generation,
 # you can replace this with a roxygen-generated NAMESPACE.
 
+export(convert_inverse_relationships)
 export(fishers_z)
 export(get_dof_or_sample_size)
 export(hsma)

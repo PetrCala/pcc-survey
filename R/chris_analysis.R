@@ -93,6 +93,11 @@ chris_analyse <- function(config) {
 
   log_dataframe_info(df = pcc_df, colnames_to_analyse = c("study", "meta"))
 
+  # Convert inverse relationships for comparability (if enabled)
+  if (is.null(config$cleaning$convert_inverse_relationships) || config$cleaning$convert_inverse_relationships) {
+    pcc_df <- convert_inverse_relationships(pcc_df, log_results = TRUE)
+  }
+
   # Calculate flavours for each meta-analysis
   get_flavours <- function() {
     lapply(split(pcc_df, pcc_df$meta), function(meta_df) {
