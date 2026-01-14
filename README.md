@@ -1,6 +1,6 @@
 <h1 align="center">PCC Survey (`pccsurvey`)</h1>
 
-This repo is now a **proper R package** named `pccsurvey`. It validates outcomes of custom methods on a controlled dataset (shipped in `inst/extdata/base.xlsx`). It’s mainly meant for iterating on implementations in `R/custom.R` and comparing them against the reference methods in `R/pcc.R`.
+This repo is now a **proper R package** named `pccsurvey`. It provides tools for running meta-analysis on large datasets, specifically the Chris analysis workflow that processes PCC (Partial Correlation Coefficient) studies and calculates various meta-analysis statistics.
 
 ## Table of contents
 
@@ -101,14 +101,17 @@ make clean
 
 ## Configuration
 
-Configuration is shipped in `inst/extdata/static.yaml` and is read by `read_static()` at runtime. Common keys:
+Configuration is shipped in `inst/extdata/chris_config.yaml` and is read at runtime. Key settings include:
 
-- `file_name`: Input Excel file name under `data/` (default: `base.xlsx`).
-- `expected_stats_file_name`: Output Excel file name under `data/` (default: `expected_stats.xlsx`).
-- `re_method`: Random-effects “flavor” (e.g. `"DL"`, `"ML"`, `"REML"`, ...).
-- `re_method_fishers_z`: Same idea as `re_method`, but for Fisher’s Z.
-- `validate`: Toggles for individual validation steps (`pcc_var_1`, `pcc_var_2`, `re`, `uwls`, `uwls3`, `hsma`, `fishers_z`).
-- `separators`: Present in the YAML, but currently not used when reading Excel inputs.
+- `data`: File name and sheet name for the input data
+- `cols`: Column mappings from source Excel to internal names
+- `analysis`: Analysis settings (PCC identifier, index column)
+- `methods`: Random-effects method settings (`re_method`, `re_method_fishers_z`)
+- `cleaning`: Data cleaning options (clean names, recalculate t-values, fill DOF)
+- `filtering`: Optional filtering to a single meta-analysis
+- `logging`: Logging configuration (level, file name, etc.)
+- `caching`: Caching settings (enable/disable, cache age)
+- `output`: Output file name and directory
 
 ## What the script does
 
