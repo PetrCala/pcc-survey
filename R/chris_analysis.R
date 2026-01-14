@@ -55,31 +55,42 @@ get_chris_metaflavours <- function(df, re_method = "ML", re_method_fishers_z = "
 chris_analyse <- function(config) {
   logger::log_info("Running the chris analysis")
 
-  # Read the data
-  df <- read_chris_data(
-    file_name = config$data$file_name,
-    sheet_name = config$data$sheet_name
-  )
-
-  # Clean the data (with caching if enabled)
-  clean_fn <- function() {
-    clean_chris_data(
-      df = df,
-      cols = config$cols,
-      clean_names = config$cleaning$clean_names,
-      recalculate_t_value = config$cleaning$recalculate_t_value
-    )
-  }
-
+  # Read the data (with caching if enabled)
   if (config$caching$use_cache) {
     df <- run_cached_function(
-      f = clean_fn,
+      f = read_chris_data,
+      file_name = config$data$file_name,
+      sheet_name = config$data$sheet_name,
       use_cache = TRUE,
       cache_dir = "_cache",
       cache_age = config$caching$cache_age
     )
   } else {
-    df <- clean_fn()
+    df <- read_chris_data(
+      file_name = config$data$file_name,
+      sheet_name = config$data$sheet_name
+    )
+  }
+
+  # Clean the data (with caching if enabled)
+  if (config$caching$use_cache) {
+    df <- run_cached_function(
+      f = clean_chris_data,
+      df = df,
+      cols = config$cols,
+      clean_names = config$cleaning$clean_names,
+      recalculate_t_value = config$cleaning$recalculate_t_value,
+      use_cache = TRUE,
+      cache_dir = "_cache",
+      cache_age = config$caching$cache_age
+    )
+  } else {
+    df <- clean_chris_data(
+      df = df,
+      cols = config$cols,
+      clean_names = config$cleaning$clean_names,
+      recalculate_t_value = config$cleaning$recalculate_t_value
+    )
   }
 
   # Optionally subset to single meta-analysis
@@ -90,25 +101,25 @@ chris_analyse <- function(config) {
     df <- df[df$meta == meta_to_use, ]
   }
 
-  # Run the PCC analysis - use pcc studies only
-  get_pcc_fn <- function() {
-    get_pcc_data(
+  # Run the PCC analysis - use pcc studies only (with caching if enabled)
+  if (config$caching$use_cache) {
+    pcc_df <- run_cached_function(
+      f = get_pcc_data,
       df = data.table::copy(df),
       pcc_identifier = config$analysis$pcc_identifier,
       fill_dof = config$cleaning$fill_dof,
-      fill_dof_conditions = config$cleaning$fill_dof_conditions
-    )
-  }
-
-  if (config$caching$use_cache) {
-    pcc_df <- run_cached_function(
-      f = get_pcc_fn,
+      fill_dof_conditions = config$cleaning$fill_dof_conditions,
       use_cache = TRUE,
       cache_dir = "_cache",
       cache_age = config$caching$cache_age
     )
   } else {
-    pcc_df <- get_pcc_fn()
+    pcc_df <- get_pcc_data(
+      df = data.table::copy(df),
+      pcc_identifier = config$analysis$pcc_identifier,
+      fill_dof = config$cleaning$fill_dof,
+      fill_dof_conditions = config$cleaning$fill_dof_conditions
+    )
   }
 
   log_dataframe_info(df = pcc_df, colnames_to_analyse = c("study", "meta"))

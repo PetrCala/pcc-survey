@@ -78,7 +78,15 @@ fill_missing_values <- function(df, target_col, columns = c(), missing_value_pre
 
   for (i in 2:nrow(df)) {
     for (col in columns) {
-      if (df[[col]][i] != df[[col]][i - 1]) {
+      val_current <- df[[col]][i]
+      val_previous <- df[[col]][i - 1]
+      # Handle NA values: if either is NA, consider it a change if they're not both NA
+      if (is.na(val_current) || is.na(val_previous)) {
+        if (!identical(is.na(val_current), is.na(val_previous))) {
+          change[i] <- TRUE
+          break
+        }
+      } else if (val_current != val_previous) {
         change[i] <- TRUE
         break
       }
@@ -330,6 +338,14 @@ get_pcc_data <- function(df, pcc_identifier = "correlation", fill_dof = TRUE, fi
       drop_negative = conditions$drop_negative,
       drop_zero = conditions$drop_zero
     )
+  }
+
+  # Drop rows with missing DOF before calculating variance (pcc_variance requires no NA in dof)
+  n_rows_before_dof_drop <- nrow(df)
+  missing_dof_rows <- is.na(df$dof)
+  if (sum(missing_dof_rows) > 0) {
+    logger::log_info(paste("Dropping", sum(missing_dof_rows), "rows with missing degrees of freedom before calculating PCC variance."))
+    df <- df[!missing_dof_rows, ]
   }
 
   # Calculate the PCC variance
