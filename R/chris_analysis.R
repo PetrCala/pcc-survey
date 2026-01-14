@@ -226,7 +226,7 @@ calculate_estimator_summary <- function(results_df) {
   })
 
   # Create data frame with statistics as rows and estimators as columns
-  stat_names <- c("count", "minimum", "max", "missing", "skewness", "median", "IQR", "trimmed_mean_10", "Mean", "SD")
+  stat_names <- c("Mean", "median", "SD", "count", "minimum", "max", "missing", "skewness", "IQR", "trimmed_mean_10")
   summary_df <- data.frame(
     Statistic = stat_names,
     stringsAsFactors = FALSE
