@@ -61,4 +61,5 @@ caching:
 # Output
 output:
   file_name: "chris_results.csv"  # Output CSV file name
-  output_dir: "data"  # Output directory relative to project root
+  output_dir: "output"  # Output directory relative to project root
+  estimator_summary_file_name: "estimator_summary.csv"  # Estimator summary statistics (Table 1) relative to project root

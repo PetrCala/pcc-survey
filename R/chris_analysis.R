@@ -131,3 +131,69 @@ chris_analyse <- function(config) {
 
   pcc_df_out
 }
+
+#' Calculate estimator summary statistics across meta-analyses
+#'
+#' Calculates mean, median, and standard deviation for each estimator
+#' across all individual meta-analyses (excludes "All meta-analyses" row).
+#' This produces Table 1 from the analysis.
+#'
+#' @param results_df [data.frame] Results from chris_analyse() containing estimator columns
+#' @return [data.frame] Summary table with columns: Estimator, Mean, Median, SD
+#' @export
+calculate_estimator_summary <- function(results_df) {
+  # Filter out "All meta-analyses" row
+  individual_metas <- results_df[results_df$meta != "All meta-analyses", ]
+
+  # Get estimator columns (columns ending with _est)
+  estimator_cols <- grep("_est$", colnames(individual_metas), value = TRUE)
+
+  if (length(estimator_cols) == 0) {
+    cli::cli_abort("No estimator columns found (columns ending with '_est')")
+  }
+
+  # Map column names to readable estimator names
+  estimator_names <- c(
+    "re_est" = "RE",
+    "uwls_est" = "UWLS",
+    "uwls3_est" = "UWLS3",
+    "hsma_est" = "HSMA",
+    "fishers_z_est" = "Fisher's z"
+  )
+
+  # Calculate statistics for each estimator
+  summary_list <- lapply(estimator_cols, function(col) {
+    values <- individual_metas[[col]]
+    # Remove NA values for calculations
+    values_clean <- values[!is.na(values)]
+
+    if (length(values_clean) == 0) {
+      list(
+        Estimator = if (col %in% names(estimator_names)) estimator_names[[col]] else col,
+        Mean = NA_real_,
+        Median = NA_real_,
+        SD = NA_real_
+      )
+    } else {
+      list(
+        Estimator = if (col %in% names(estimator_names)) estimator_names[[col]] else col,
+        Mean = mean(values_clean),
+        Median = median(values_clean),
+        SD = sd(values_clean)
+      )
+    }
+  })
+
+  # Convert to data frame
+  summary_df <- do.call(rbind, lapply(summary_list, function(x) {
+    data.frame(
+      Estimator = x$Estimator,
+      Mean = x$Mean,
+      Median = x$Median,
+      SD = x$SD,
+      stringsAsFactors = FALSE
+    )
+  }))
+
+  summary_df
+}

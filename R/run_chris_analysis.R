@@ -42,6 +42,14 @@ run_chris_analysis <- function(config_path = NULL) {
     output_dir = config$output$output_dir
   )
 
+  # Calculate and save estimator summary (Table 1)
+  estimator_summary <- calculate_estimator_summary(results)
+  save_estimator_summary(
+    summary_df = estimator_summary,
+    file_name = config$output$estimator_summary_file_name,
+    output_dir = config$output$output_dir
+  )
+
   logger::log_info("Chris analysis completed successfully")
   invisible(results)
 }

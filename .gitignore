@@ -1,8 +1,8 @@
 communication/
 data/chris_data.xlsx
-data/chris_results.csv
 
 _cache/
 local/
 logs/
 man/
+output/

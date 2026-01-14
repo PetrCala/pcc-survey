@@ -130,3 +130,22 @@ save_chris_results <- function(df, file_name = "chris_results.csv", output_dir =
   utils::write.csv(df, file = output_path, row.names = FALSE)
   logger::log_info(paste("Results saved to", output_path))
 }
+
+#' Save estimator summary statistics to CSV
+#'
+#' @param summary_df [data.frame] Summary data frame from calculate_estimator_summary()
+#' @param file_name [character] Output file name (default: "estimator_summary.csv")
+#' @param output_dir [character] Output directory (default: "data")
+#' @export
+save_estimator_summary <- function(summary_df, file_name = "estimator_summary.csv", output_dir = "data") {
+  # Create the output folder
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+  }
+
+  # Save the results
+  output_path <- file.path(output_dir, file_name)
+  logger::log_debug("Saving estimator summary to ", output_path)
+  utils::write.csv(summary_df, file = output_path, row.names = FALSE)
+  logger::log_info(paste("Estimator summary saved to", output_path))
+}
