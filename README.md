@@ -18,6 +18,7 @@ This repo is now a **proper R package** named `pccsurvey`. It validates outcomes
 - [Inputs / outputs](#inputs--outputs)
 - [Modifying custom methods](#modifying-custom-methods)
 - [Source data description](#source-data-description)
+- [Chris Analysis Data](#chris-analysis-data)
 - [Notes](#notes)
 
 ## Quickstart (Makefile)
@@ -211,6 +212,7 @@ The Chris analysis requires an external data file that is not included in the re
    - The file should have a sheet named `"Main"` containing the data
 
 3. **Verify the file**: After placing the file, you can verify it's in the correct location:
+
    ```bash
    ls -lh data/chris_data.xlsx
    ```
