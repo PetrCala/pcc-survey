@@ -6,7 +6,6 @@ export(hsma)
 export(pcc_sum_stats)
 export(pcc_variance)
 export(re)
-export(run_validation)
 export(uwls)
 export(uwls3)
 

@@ -46,7 +46,7 @@ run:
 validate: run
 
 clean:
-	@$(RSCRIPT) -e "f1 <- file.path('$(PROJECT_DIR)','data','expected_stats.xlsx'); f2 <- file.path('$(PROJECT_DIR)','data','chris_results.csv'); removed <- FALSE; if (file.exists(f1)) { file.remove(f1); cat('Removed:', f1, '\n'); removed <- TRUE }; if (file.exists(f2)) { file.remove(f2); cat('Removed:', f2, '\n'); removed <- TRUE }; if (!removed) { cat('No generated output to remove\n') }"
+	@$(RSCRIPT) -e "f <- file.path('$(PROJECT_DIR)','data','chris_results.csv'); if (file.exists(f)) { file.remove(f); cat('Removed:', f, '\n') } else { cat('No generated output to remove:', f, '\n') }"
 
 doctor:
 	@$(RSCRIPT) -e "cat('R version:', R.version.string, '\n')"

@@ -16,8 +16,6 @@ This repo is now a **proper R package** named `pccsurvey`. It validates outcomes
 - [Configuration](#configuration)
 - [What the script does](#what-the-script-does)
 - [Inputs / outputs](#inputs--outputs)
-- [Modifying custom methods](#modifying-custom-methods)
-- [Source data description](#source-data-description)
 - [Chris Analysis Data](#chris-analysis-data)
 - [Notes](#notes)
 
@@ -42,7 +40,7 @@ If you prefer RStudio, open this folder as a project, then run:
 
 ```r
 devtools::load_all()
-run_validation()
+run_chris_analysis()
 ```
 
 ## Prerequisites
@@ -133,73 +131,6 @@ Running `make run` (or `run_chris_analysis()`):
   - `data/chris_results.csv` - Analysis results with statistics for each meta-analysis (overwritten on each run)
   - `logs/chris_analysis_YYYYMMDD_HHMMSS.log` - Timestamped log file with detailed execution information
 
-## Modifying custom methods
-
-By default, all methods have an expected result for the predefined set of data (`base.xlsx`). These are listed in `R/pcc.R`.
-
-If you wish to compare these against your custom method, **go to `R/custom.R`**. There are placeholder functions you can replace with your own code; their results will be compared against the expected results produced by the reference methods in `R/pcc.R`.
-
-When defining the custom methods, keep in mind the following:
-
-- For `custom_pcc_variance`, the function **must return a numeric vector**. Otherwise, there are no restrictions.
-- For the other custom methods, **they must all return a list with two keys - `est` and `t_value`**. For example:
-
-  ```r
-  # THIS IS A VALID RETURN
-  my_list <- list(est = 1, t_value = 2)
-  return(my_list)
-
-  # WHILE THIS IS NOT
-  return(list(custom_est_key = 1, some_t_value_key = 3))
-  return(list(est = 1)) # Missing t_value
-  return(list(t_value = 2)) # Missing est
-  ```
-
-- Each method accepts (among others) a `df` argument, as in _data frame_. This is the data frame, as you can see it in the `base.xlsx` file. Consequently, this allows you to easily access the effect, standard error, and other variables using the following code:
-
-  ```r
-  some_custom_function <- function(df) {
-    effect <- df$effect
-    se <- df$se
-
-    my_ols <- lm(effect ~ se, data = df)
-    ...
-  }
-  ```
-
-## Source data description
-
-The main data frame to test against, `base.xlsx`, is a single meta-analysis from the file `1. Aid and Growth journals.xlsx`. To make the computations smoother, the following modifications have been done to obtain this data frame:
-
-- Renamed columns
-- Dropped rows which either do not report Partial Correlation Coefficient, effect size, or standard error.
-- T-value was imputed where missing in the following manner - `t_value = effect / se`.
-- Degrees of freedom were missing for all observations, and were thus imputed using the following function.
-
-  ```r
-  fill_dof_using_pcc <- function(df) {
-    pcc <- df$effect
-    se <- df$se
-    t_values <- df$t_value
-    dof <- df$dof
-
-    calculated_t_values <- pcc / se # Might create inf
-
-    t_values[is.na(t_values)] <- calculated_t_values[is.na(t_values)]
-    t_values[is.infinite(t_values)] <- NA
-
-    fillable_rows <- is.na(dof) & !is.na(t_values) & !is.na(pcc)
-    if (sum(fillable_rows) == 0) {
-      return(df)
-    }
-    df[fillable_rows, "dof"] <- ((1 / pcc[fillable_rows]^2) - 1) / t_values[fillable_rows]^2
-
-    return(df)
-  }
-  ```
-
-- PCC variance was calculated for two offsets (1 and 2) using `pcc_variance` (see `R/pcc.R`).
-
 ## Chris Analysis Data
 
 The Chris analysis requires an external data file that is not included in the repository:
@@ -221,4 +152,5 @@ The analysis will read from `data/chris_data.xlsx` when you run `make run`. If t
 
 ## Notes
 
-- The expected results are also, by default, stored in the `expected_stats.xlsx` file for immediate access.
+- The analysis results are saved to `data/chris_results.csv` after each run.
+- Log files are created in the `logs/` directory with timestamps for each run.
