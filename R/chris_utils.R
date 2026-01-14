@@ -33,9 +33,7 @@ is_empty <- function(obj) {
 #' @param x [numeric] The number to convert
 #' @return [character] The number as a percentage string
 #' @export
-to_perc <- function(x) {
-  paste0(round(x * 100, 2), "%")
-}
+to_perc <- function(x) paste0(round(x * 100, 2), "%")
 
 #' Find a string in a vector of strings using a substring
 #'
