@@ -179,21 +179,21 @@ test_that("convert_inverse_relationships uses median when mean and median differ
   # Mean = (-0.5 + -0.4 + -0.3 + 0.5) / 4 = -0.175 (would flip with mean)
   # Median = median(-0.5, -0.4, -0.3, 0.5) = -0.35 (flips with median)
   # Both would flip, so let's use a case where they differ in decision:
-  
+
   # Effects: [-0.3, -0.2, 0.1, 0.2, 0.3]
   # Mean = (-0.3 + -0.2 + 0.1 + 0.2 + 0.3) / 5 = 0.02 (would NOT flip with mean)
   # Median = median(-0.3, -0.2, 0.1, 0.2, 0.3) = 0.1 (would NOT flip with median)
   # Actually both don't flip... let me use a better example:
-  
+
   # Effects: [-0.4, -0.3, -0.2, 0.1, 0.2]
   # Mean = (-0.4 + -0.3 + -0.2 + 0.1 + 0.2) / 5 = -0.12 (would flip with mean)
   # Median = median(-0.4, -0.3, -0.2, 0.1, 0.2) = -0.2 (flips with median)
   # Both flip... need a case where mean < 0 but median >= 0:
-  
+
   # Effects: [-0.5, -0.4, 0.1, 0.2, 0.3]
   # Mean = (-0.5 + -0.4 + 0.1 + 0.2 + 0.3) / 5 = -0.06 (would flip with mean)
   # Median = median(-0.5, -0.4, 0.1, 0.2, 0.3) = 0.1 (would NOT flip with median)
-  
+
   df <- data.frame(
     meta = rep("meta_mean_median_diff", 5),
     effect = c(-0.5, -0.4, 0.1, 0.2, 0.3),
@@ -208,10 +208,10 @@ test_that("convert_inverse_relationships uses median when mean and median differ
   # Effects should remain unchanged
   expect_equal(result$effect, c(-0.5, -0.4, 0.1, 0.2, 0.3))
   expect_equal(result$t_value, c(-5.0, -4.0, 1.0, 2.0, 3.0))
-  
+
   # Verify: mean would have flipped, but median doesn't
   mean_effect <- mean(df$effect)
   median_effect <- median(df$effect)
-  expect_true(mean_effect < 0)  # Mean is negative
-  expect_true(median_effect >= 0)  # Median is non-negative
+  expect_true(mean_effect < 0) # Mean is negative
+  expect_true(median_effect >= 0) # Median is non-negative
 })
