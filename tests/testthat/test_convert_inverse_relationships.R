@@ -1,7 +1,7 @@
 # Tests for convert_inverse_relationships function
 
-test_that("convert_inverse_relationships flips meta with negative mean", {
-  # Create a meta-analysis with negative mean PCC
+test_that("convert_inverse_relationships flips meta with negative median", {
+  # Create a meta-analysis with negative median PCC
   df <- data.frame(
     meta = rep("meta_negative", 3),
     effect = c(-0.3, -0.2, -0.1),
@@ -22,8 +22,8 @@ test_that("convert_inverse_relationships flips meta with negative mean", {
   expect_equal(result$se, c(0.1, 0.1, 0.1))
 })
 
-test_that("convert_inverse_relationships does not flip meta with positive mean", {
-  # Create a meta-analysis with positive mean PCC
+test_that("convert_inverse_relationships does not flip meta with positive median", {
+  # Create a meta-analysis with positive median PCC
   df <- data.frame(
     meta = rep("meta_positive", 3),
     effect = c(0.1, 0.2, 0.3),
@@ -44,8 +44,8 @@ test_that("convert_inverse_relationships does not flip meta with positive mean",
   expect_equal(result$se, c(0.1, 0.1, 0.1))
 })
 
-test_that("convert_inverse_relationships does not flip meta with zero mean", {
-  # Create a meta-analysis with zero mean PCC
+test_that("convert_inverse_relationships does not flip meta with zero median", {
+  # Create a meta-analysis with zero median PCC
   df <- data.frame(
     meta = rep("meta_zero", 3),
     effect = c(-0.1, 0.0, 0.1),
@@ -56,7 +56,7 @@ test_that("convert_inverse_relationships does not flip meta with zero mean", {
 
   result <- convert_inverse_relationships(df, log_results = FALSE)
 
-  # Effects should remain unchanged (mean is 0, not < 0)
+  # Effects should remain unchanged (median is 0, not < 0)
   expect_equal(result$effect, c(-0.1, 0.0, 0.1))
 
   # t-values should remain unchanged
@@ -72,9 +72,9 @@ test_that("convert_inverse_relationships handles multiple metas correctly", {
       rep("meta_C", 3)
     ),
     effect = c(
-      -0.3, -0.2, -0.1, # Meta A: mean = -0.2 (should flip)
-      0.1, 0.2, 0.3, # Meta B: mean = 0.2 (should not flip)
-      -0.15, -0.1, -0.05 # Meta C: mean = -0.1 (should flip)
+      -0.3, -0.2, -0.1, # Meta A: median = -0.2 (should flip)
+      0.1, 0.2, 0.3, # Meta B: median = 0.2 (should not flip)
+      -0.15, -0.1, -0.05 # Meta C: median = -0.1 (should flip)
     ),
     t_value = c(
       -3.0, -2.0, -1.0, # Meta A
@@ -112,7 +112,7 @@ test_that("convert_inverse_relationships handles missing values correctly", {
 
   result <- convert_inverse_relationships(df, log_results = FALSE)
 
-  # Mean of non-NA effects: (-0.3 + -0.2 + -0.1) / 3 = -0.2 (should flip)
+  # Median of non-NA effects: median(-0.3, -0.2, -0.1) = -0.2 (should flip)
   # Non-NA effects should be flipped
   expect_equal(result$effect[!is.na(result$effect)], c(0.3, 0.2, 0.1))
   expect_equal(result$t_value[!is.na(result$t_value)], c(3.0, 2.0, 1.0))
@@ -134,7 +134,7 @@ test_that("convert_inverse_relationships handles all NA effects gracefully", {
 
   result <- convert_inverse_relationships(df, log_results = FALSE)
 
-  # Should return unchanged (mean is NA, so no conversion)
+  # Should return unchanged (median is NA, so no conversion)
   expect_true(all(is.na(result$effect)))
   expect_true(all(is.na(result$t_value)))
 })
@@ -171,4 +171,47 @@ test_that("convert_inverse_relationships maintains t = effect/se relationship", 
 
   # After flipping, t should still equal effect/se
   expect_equal(result$t_value, result$effect / result$se)
+})
+
+test_that("convert_inverse_relationships uses median when mean and median differ", {
+  # Create a meta-analysis where mean and median differ
+  # Effects: [-0.5, -0.4, -0.3, 0.5]
+  # Mean = (-0.5 + -0.4 + -0.3 + 0.5) / 4 = -0.175 (would flip with mean)
+  # Median = median(-0.5, -0.4, -0.3, 0.5) = -0.35 (flips with median)
+  # Both would flip, so let's use a case where they differ in decision:
+  
+  # Effects: [-0.3, -0.2, 0.1, 0.2, 0.3]
+  # Mean = (-0.3 + -0.2 + 0.1 + 0.2 + 0.3) / 5 = 0.02 (would NOT flip with mean)
+  # Median = median(-0.3, -0.2, 0.1, 0.2, 0.3) = 0.1 (would NOT flip with median)
+  # Actually both don't flip... let me use a better example:
+  
+  # Effects: [-0.4, -0.3, -0.2, 0.1, 0.2]
+  # Mean = (-0.4 + -0.3 + -0.2 + 0.1 + 0.2) / 5 = -0.12 (would flip with mean)
+  # Median = median(-0.4, -0.3, -0.2, 0.1, 0.2) = -0.2 (flips with median)
+  # Both flip... need a case where mean < 0 but median >= 0:
+  
+  # Effects: [-0.5, -0.4, 0.1, 0.2, 0.3]
+  # Mean = (-0.5 + -0.4 + 0.1 + 0.2 + 0.3) / 5 = -0.06 (would flip with mean)
+  # Median = median(-0.5, -0.4, 0.1, 0.2, 0.3) = 0.1 (would NOT flip with median)
+  
+  df <- data.frame(
+    meta = rep("meta_mean_median_diff", 5),
+    effect = c(-0.5, -0.4, 0.1, 0.2, 0.3),
+    t_value = c(-5.0, -4.0, 1.0, 2.0, 3.0),
+    se = c(0.1, 0.1, 0.1, 0.1, 0.1),
+    study = paste0("study", 1:5)
+  )
+
+  result <- convert_inverse_relationships(df, log_results = FALSE)
+
+  # With median-based logic: median = 0.1 (positive), so should NOT flip
+  # Effects should remain unchanged
+  expect_equal(result$effect, c(-0.5, -0.4, 0.1, 0.2, 0.3))
+  expect_equal(result$t_value, c(-5.0, -4.0, 1.0, 2.0, 3.0))
+  
+  # Verify: mean would have flipped, but median doesn't
+  mean_effect <- mean(df$effect)
+  median_effect <- median(df$effect)
+  expect_true(mean_effect < 0)  # Mean is negative
+  expect_true(median_effect >= 0)  # Median is non-negative
 })
