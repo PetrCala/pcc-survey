@@ -36,3 +36,24 @@ run_cached_function <- function(
   cached_f <- memoise::memoise(f, cache = disk_cache)
   cached_f(...)
 }
+
+#' Helper function to call a function with optional caching based on config
+#'
+#' @param config [list] Configuration list with caching settings
+#' @param f [function] The function to call
+#' @param ... Arguments to pass to the function
+#' @return The result of calling f(...)
+#' @export
+maybe_cached <- function(config, f, ...) {
+  if (config$caching$use_cache) {
+    run_cached_function(
+      f = f,
+      ...,
+      use_cache = TRUE,
+      cache_dir = "_cache",
+      cache_age = config$caching$cache_age
+    )
+  } else {
+    f(...)
+  }
+}

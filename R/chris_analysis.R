@@ -47,26 +47,6 @@ get_chris_metaflavours <- function(df, re_method = "ML", re_method_fishers_z = "
   as.data.frame(results)
 }
 
-#' Helper function to call a function with optional caching based on config
-#'
-#' @param config [list] Configuration list
-#' @param f [function] The function to call
-#' @param ... Arguments to pass to the function
-#' @return The result of calling f(...)
-maybe_cached <- function(config, f, ...) {
-  if (config$caching$use_cache) {
-    run_cached_function(
-      f = f,
-      ...,
-      use_cache = TRUE,
-      cache_dir = "_cache",
-      cache_age = config$caching$cache_age
-    )
-  } else {
-    f(...)
-  }
-}
-
 #' Run the Chris analysis
 #'
 #' @param config [list] Configuration list loaded from chris_config.yaml
