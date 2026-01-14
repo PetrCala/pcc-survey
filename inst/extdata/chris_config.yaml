@@ -46,7 +46,7 @@ filtering:
 
 # Logging
 logging:
-  log_level: "INFO"  # DEBUG, INFO, WARN, ERROR, FATAL
+  log_level: "DEBUG"  # DEBUG, INFO, WARN, ERROR, FATAL
   log_to_console_only: false  # If true, don't write to file
   log_file_name: "chris_analysis.log"
   log_flush_on_setup: true  # Clear log file on startup

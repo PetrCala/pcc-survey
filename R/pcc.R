@@ -34,7 +34,7 @@ re <- function(df, effect = NULL, se = NULL, method = "DL") {
   result <- tryCatch(
     {
       if (length(meta) != 1) {
-        message("Could not calculate RE for multiple meta-analyses")
+        logger::log_warn("Could not calculate RE for multiple meta-analyses")
         return(list(est = NA, t_value = NA))
       }
 
@@ -54,7 +54,7 @@ re <- function(df, effect = NULL, se = NULL, method = "DL") {
       return(list(est = re_est, t_value = re_t_value))
     },
     error = function(e) {
-      message(paste("Could not fit the RE model for meta-analysis", meta, ": ", conditionMessage(e)))
+      logger::log_warn(paste("Could not fit the RE model for meta-analysis", meta, ":", conditionMessage(e)))
       list(est = NA, t_value = NA)
     }
   )
@@ -92,7 +92,7 @@ uwls <- function(df, effect = NULL, se = NULL) {
       list(est = est, t_value = t_value)
     },
     error = function(e) {
-      message(paste("Could not fit the UWLS model for meta-analysis", meta, ": ", conditionMessage(e)))
+      logger::log_warn(paste("Could not fit the UWLS model for meta-analysis", meta, ":", conditionMessage(e)))
       list(est = NA, t_value = NA)
     }
   )
@@ -129,7 +129,7 @@ uwls3 <- function(df) {
   uwls3_data <- uwls3_data[!is.na(pcc3) & !is.na(se3), ] # Drop NA rows
 
   if (nrow(uwls3_data) == 0) {
-    message(paste("No data to calculate UWLS+3 z for meta-analysis", meta))
+    logger::log_warn(paste("No data to calculate UWLS+3 z for meta-analysis", meta))
     return(list(est = NA, t_value = NA))
   }
 
@@ -147,12 +147,12 @@ hsma <- function(df) {
 
   missing_sample_sizes <- sum(is.na(df$sample_size))
   if (missing_sample_sizes > 0) {
-    message(paste("Dropping", missing_sample_sizes, "missing sample sizes for meta-analysis", meta))
+    logger::log_info(paste("Dropping", missing_sample_sizes, "missing sample sizes for meta-analysis", meta))
     df <- df[!is.na(df$sample_size), ]
   }
 
   if (nrow(df) == 0) {
-    message(paste("No data to calculate HSMA for meta-analysis", meta))
+    logger::log_warn(paste("No data to calculate HSMA for meta-analysis", meta))
     return(list(est = NA, t_value = NA))
   }
 
@@ -185,7 +185,7 @@ fishers_z <- function(df, method = "ML") {
   re_data <- re_data[!is.na(fishers_z_) & !is.na(se_), ] # Drop NA rows
 
   if (nrow(re_data) == 0) {
-    message(paste("No data to calculate Fisher's z for meta-analysis", meta))
+    logger::log_warn(paste("No data to calculate Fisher's z for meta-analysis", meta))
     return(list(est = NA, t_value = NA))
   }
 
@@ -228,8 +228,8 @@ pcc_sum_stats <- function(df, log_results = TRUE) {
   )
 
   if (log_results) {
-    message("PCC analysis summary statistics:")
-    message(paste("Number of PCC "))
+    logger::log_info("PCC analysis summary statistics:")
+    logger::log_info(paste("Number of PCC observations:", k_))
   }
   res
 }

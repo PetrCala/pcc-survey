@@ -5,8 +5,9 @@
 #'
 #' @param log_level [character] Log level: "DEBUG", "INFO", "WARN", "ERROR", "FATAL"
 #' @param log_to_console_only [logical] If TRUE, only log to console
-#' @param log_file_name [character] Name of the log file (or NULL to skip file logging)
-#' @param log_flush_on_setup [logical] If TRUE, clear the log file on startup
+#' @param log_file_name [character] Base name of the log file (timestamp will be added). If NULL, skip file logging.
+#' @param log_flush_on_setup [logical] If TRUE, clear the log file on startup (not used with timestamped files)
+#' @return [character] The path to the log file (or NULL if console only)
 #' @export
 setup_chris_logging <- function(
     log_level = "INFO",
@@ -40,13 +41,19 @@ setup_chris_logging <- function(
       dir.create(log_dir, recursive = TRUE, showWarnings = FALSE)
     }
 
-    log_file <- file.path(log_dir, log_file_name)
-
-    # Flush log file if requested
-    if (log_flush_on_setup && file.exists(log_file)) {
-      file.remove(log_file)
+    # Generate timestamped log file name
+    timestamp <- format(Sys.time(), "%Y%m%d_%H%M%S")
+    log_file_base <- tools::file_path_sans_ext(log_file_name)
+    log_file_ext <- tools::file_ext(log_file_name)
+    if (log_file_ext == "") {
+      log_file_ext <- "log"
     }
+    timestamped_log_name <- paste0(log_file_base, "_", timestamp, ".", log_file_ext)
+    log_file <- file.path(log_dir, timestamped_log_name)
 
     logger::log_appender(logger::appender_file(log_file, max_files = 1L), index = 2)
+    invisible(log_file)
+  } else {
+    invisible(NULL)
   }
 }
