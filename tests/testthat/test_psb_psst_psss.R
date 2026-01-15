@@ -76,7 +76,7 @@ test_that("calculate_psst handles zero expected proportion", {
   # If expected_prop is 0 but observed > 0, should return NA
   expected_count <- calculate_expected_significant(df, mean_effect)
   observed_count <- calculate_observed_significant(df)
-  
+
   if (expected_count == 0) {
     if (observed_count == 0) {
       expect_equal(psst, 1.0)
