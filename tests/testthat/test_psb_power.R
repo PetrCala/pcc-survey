@@ -123,9 +123,9 @@ test_that("calculate_study_power handles infinite values", {
 
   # Should handle infinite lambda gracefully
   expect_length(power, 3)
-  # When lambda is infinite (se = 0), power should be 1.0 (perfect power)
-  # However, the code sets is.infinite(power) to NA, so check for either case
-  expect_true(is.na(power[2]) || is.infinite(power[2]) || power[2] == 1.0)
+  # When lambda is infinite (se = 0), power calculation gives 1.0 (perfect power)
+  # This is correct: with infinite non-centrality parameter, we always detect the effect
+  expect_equal(power[2], 1.0, tolerance = 1e-6)
 })
 
 test_that("calculate_study_power validates inputs", {
