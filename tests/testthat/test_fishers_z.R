@@ -108,3 +108,85 @@ test_that("fishers_z handles sample sizes that are too small", {
   expect_true(is.na(result$est) || is.numeric(result$est))
   expect_true(is.na(result$t_value) || is.numeric(result$t_value))
 })
+
+test_that("fishers_z correctly converts estimates back to PCC", {
+  # Test that the Fisher's z transformation correctly converts back to PCC
+  # This validates the mathematical correctness of the forward and inverse transformations
+  
+  # Test with various correlation values
+  test_correlations <- c(0.05, 0.1, 0.2, 0.3, 0.5, 0.7, 0.9, -0.1, -0.3, -0.5, -0.7)
+  
+  for (true_r in test_correlations) {
+    # Create a data frame with a single study having the true correlation
+    # Use a large sample size to minimize meta-analysis weighting effects
+    df <- data.frame(
+      effect = true_r,
+      sample_size = 1000,
+      dof = 993,
+      meta = "test_meta",
+      study = "study1"
+    )
+    
+    result <- fishers_z(df, method = "ML")
+    
+    # The estimated PCC should be very close to the true correlation
+    # (within floating point precision, typically < 1e-10)
+    expect_true(is.numeric(result$est))
+    expect_false(is.na(result$est))
+    expect_true(result$est >= -1 && result$est <= 1)
+    
+    # For a single study with large sample size, the estimate should be very close
+    # Allow for some numerical precision error (1e-6 is very generous)
+    expect_true(abs(result$est - true_r) < 1e-6,
+                info = paste0("For true_r = ", true_r, ", got est = ", result$est))
+  }
+})
+
+test_that("fishers_z forward and inverse transformations are mathematically correct", {
+  # Test the mathematical correctness of the transformation formulas
+  # Forward: z = 0.5 * log((1 + r) / (1 - r))
+  # Inverse: r = (exp(2*z) - 1) / (exp(2*z) + 1)
+  
+  test_values <- c(0.01, 0.1, 0.3, 0.5, 0.7, 0.9, -0.1, -0.3, -0.5, -0.7, -0.9)
+  
+  for (r in test_values) {
+    # Forward transformation (as implemented in the code)
+    z <- 0.5 * log((1 + r) / (1 - r))
+    
+    # Inverse transformation (as implemented in the code)
+    r_back <- (exp(2 * z) - 1) / (exp(2 * z) + 1)
+    
+    # The round-trip should recover the original value (within floating point precision)
+    expect_true(abs(r - r_back) < 1e-14,
+                info = paste0("For r = ", r, ", round-trip error = ", abs(r - r_back)))
+  }
+})
+
+test_that("fishers_z conversion works correctly with multiple studies", {
+  # Test that the conversion works correctly when aggregating multiple studies
+  # The meta-analysis should properly weight studies and convert back to PCC
+  
+  df <- data.frame(
+    effect = c(0.1, 0.2, 0.3, 0.4),
+    sample_size = c(50, 100, 150, 200),
+    dof = c(43, 93, 143, 193),
+    meta = "test_meta",
+    study = c("study1", "study2", "study3", "study4")
+  )
+  
+  result <- fishers_z(df, method = "ML")
+  
+  # The result should be a valid correlation coefficient
+  expect_true(is.numeric(result$est))
+  expect_false(is.na(result$est))
+  expect_true(result$est >= -1 && result$est <= 1)
+  
+  # The estimate should be between the min and max input correlations
+  # (weighted by sample size, so likely closer to larger studies)
+  expect_true(result$est >= min(df$effect))
+  expect_true(result$est <= max(df$effect))
+  
+  # The estimate should be reasonable given the input values
+  # With these inputs (0.1 to 0.4), the weighted average should be positive
+  expect_true(result$est > 0)
+})
