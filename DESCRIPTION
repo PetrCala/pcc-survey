@@ -13,6 +13,7 @@ Imports:
     cli,
     data.table,
     logger,
+    MAIVE,
     memoise,
     metafor,
     plm,
