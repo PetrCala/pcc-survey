@@ -17,9 +17,6 @@ get_chris_metaflavours <- function(df, re_method = "ML", re_method_fishers_z = "
 
   logger::log_debug(paste("Calculating PCC statistics for", meta))
 
-  # Get the standard errors - silence NaNs
-  suppressWarnings(se_ <- sqrt(df[["pcc_var"]]))
-
   results <- list(meta = as.character(meta))
 
   # Define the various methods to calculate the PCC

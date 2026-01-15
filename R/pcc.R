@@ -117,12 +117,8 @@ uwls3 <- function(df) {
 
   pcc3 <- t_ / sqrt(t_^2 + dof_ + 3) # dof_ + 3 ~~ sample_size - 7 + 3
 
-  # Method 1 - Q: Use this method, or the Stata approach?
-  pcc_var3 <- (1 - pcc3^2) / (dof_ + 3) # dof_ + 3 ~~ sample_size - 7 + 3
-  se3 <- sqrt(pcc_var3)
-
-  # Method 2 - in line with Stata
-  # se3 <- df$se
+  # Use the standard error reported in the data frame (not calculated from variance)
+  se3 <- df$se
 
   # Drop observations where either the PCC3 or SE3 are missing
   uwls3_data <- data.frame(effect = pcc3, se = se3, meta = df$meta, study = df$study)
