@@ -170,6 +170,66 @@ hsma <- function(df) {
   list(est = r_avg, t_value = t_value)
 }
 
+#' Calculate WAIV2 (Weighted Average IV version 2)
+#'
+#' @note WAIV2 is an instrumental variable version of UWLS that uses sqrt(n) as an IV
+#' for 1/SE in the regression of t vs 1/SE. This is the simple regression of t vs 1/SE
+#' (exactly as used by UWLS) but with sqrt(n) as the IV for 1/SE, with no constant term.
+#'
+#' @param df [data.frame] The data frame on which to run the calculation
+#' @param effect [vector] The vector of effects. If not provided, defaults to df$effect.
+#' @param se [vector] The vector of SEs. If not provided, defaults to df$se.
+#' @return [list] A list with properties "est", "t_value".
+#' @export
+waiv2 <- function(df, effect = NULL, se = NULL) {
+  if (is.null(effect)) effect <- df$effect
+  if (is.null(se)) se <- df$se
+  stopifnot(length(effect) == nrow(df), length(se) == nrow(df))
+
+  meta <- unique(df$meta)
+
+  # Use DOF as substitute for sample size when missing
+  n_ <- get_dof_or_sample_size(df, target = "sample_size", use_dof_directly = TRUE)
+
+  # Drop rows where both sample_size and dof are missing
+  missing_n <- is.na(n_)
+  if (any(missing_n)) {
+    logger::log_info(paste("Dropping", sum(missing_n), "rows with missing sample size and DOF for WAIV2 calculation for meta-analysis", meta))
+    df <- df[!missing_n, ]
+    effect <- effect[!missing_n]
+    se <- se[!missing_n]
+    n_ <- n_[!missing_n]
+  }
+
+  if (nrow(df) == 0) {
+    logger::log_warn(paste("No data to calculate WAIV2 for meta-analysis", meta))
+    return(list(est = NA, t_value = NA))
+  }
+
+  df_model <- data.frame(
+    t = effect / se,
+    precision = 1 / se,
+    sqrt_n = sqrt(n_)
+  )
+
+  result <- tryCatch(
+    {
+      waiv2_model <- AER::ivreg(t ~ precision - 1 | sqrt_n - 1, data = df_model)
+      summary_waiv2 <- summary(waiv2_model)
+      est <- summary_waiv2$coefficients[1, "Estimate"]
+      se_est <- summary_waiv2$coefficients[1, "Std. Error"]
+      t_value <- est / se_est
+      list(est = est, t_value = t_value)
+    },
+    error = function(e) {
+      logger::log_warn(paste("Could not fit the WAIV2 model for meta-analysis", meta, ":", conditionMessage(e)))
+      list(est = NA, t_value = NA)
+    }
+  )
+
+  result
+}
+
 #' Calculate Fisher's z
 #'
 #' @note For the calculation, all studies should be present in the dataset.

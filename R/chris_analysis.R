@@ -28,7 +28,8 @@ get_chris_metaflavours <- function(df, re_method = "ML", re_method_fishers_z = "
     uwls = uwls(df),
     uwls3 = uwls3(df),
     hsma = hsma(df),
-    fishers_z = fishers_z(df, method = re_method_fishers_z)
+    fishers_z = fishers_z(df, method = re_method_fishers_z),
+    waiv2 = waiv2(df)
   )
 
   for (method in names(methods)) {
@@ -159,7 +160,8 @@ calculate_estimator_summary <- function(results_df) {
     "uwls_est" = "UWLS",
     "uwls3_est" = "UWLS3",
     "hsma_est" = "HSMA",
-    "fishers_z_est" = "Fisher's z"
+    "fishers_z_est" = "Fisher's z",
+    "waiv2_est" = "WAIV2"
   )
 
   # Helper function to calculate skewness
