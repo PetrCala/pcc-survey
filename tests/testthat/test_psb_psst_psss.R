@@ -69,14 +69,23 @@ test_that("calculate_psst handles zero expected proportion", {
   mean_effect <- 0.0 # Very low expected
   psst <- calculate_psst(df, mean_effect)
 
+  # Should return a valid result (numeric or NA)
+  expect_true(is.numeric(psst) || is.na(psst))
+
   # If expected_prop is very close to 0 and observed is also 0, should return 1
   # If expected_prop is 0 but observed > 0, should return NA
-  if (calculate_expected_significant(df, mean_effect) == 0) {
-    if (calculate_observed_significant(df) == 0) {
+  expected_count <- calculate_expected_significant(df, mean_effect)
+  observed_count <- calculate_observed_significant(df)
+  
+  if (expected_count == 0) {
+    if (observed_count == 0) {
       expect_equal(psst, 1.0)
     } else {
       expect_true(is.na(psst))
     }
+  } else {
+    # If expected is not zero, PSST should be a valid number
+    expect_true(is.numeric(psst) && !is.na(psst))
   }
 })
 
