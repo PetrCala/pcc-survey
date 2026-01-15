@@ -13,11 +13,13 @@ The PSB analysis calculates several measures to assess whether there is an exces
 For each study *i* with standard error *se<sub>i</sub>* and assuming true effect = *μ* (mean effect estimate):
 
 **Non-centrality parameter:**
+
 ```
 λ_i = μ / se_i
 ```
 
 **Power (two-tailed test, α = 0.05):**
+
 ```
 Power_i = P(|Z| > 1.96 | Z ~ N(λ_i, 1))
        = 1 - P(-1.96 < Z < 1.96)
@@ -29,6 +31,7 @@ where Φ is the standard normal cumulative distribution function.
 ### Expected Number of Significant Studies
 
 Sum of power across all studies:
+
 ```
 E[Significant] = Σ Power_i
 ```
@@ -36,6 +39,7 @@ E[Significant] = Σ Power_i
 ### Observed Number of Significant Studies
 
 Count of studies where |t-value| > 1.96:
+
 ```
 Observed = Σ I(|t_i| > 1.96)
 ```
@@ -43,6 +47,7 @@ Observed = Σ I(|t_i| > 1.96)
 ### Excess Statistical Significance (ESS)
 
 Difference between observed and expected:
+
 ```
 ESS = Observed - E[Significant]
 ```
@@ -50,6 +55,7 @@ ESS = Observed - E[Significant]
 ### Proportion of Statistically Significant Tests (PSST)
 
 Ratio of observed to expected proportion:
+
 ```
 PSST = (Observed / N) / (E[Significant] / N)
      = Observed / E[Significant]
@@ -60,6 +66,7 @@ where *N* is the total number of studies.
 ### Proportion Selected to be Statistically Significant (Psss)
 
 Proportion of results that were selectively reported:
+
 ```
 Psss = ESS / (1 - E[Significant] / N)
 ```
@@ -67,6 +74,7 @@ Psss = ESS / (1 - E[Significant] / N)
 ### Falsely Positive Evidence
 
 Proportion of studies that are falsely positive:
+
 ```
 Falsely Positive = ESS / N
 ```
