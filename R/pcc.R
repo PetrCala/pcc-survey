@@ -197,16 +197,38 @@ waiv2 <- function(df, effect = NULL, se = NULL) {
     n_ <- n_[!missing_n]
   }
 
+  # Drop rows where n_ is negative or zero (would produce NaN in sqrt)
+  invalid_n <- !is.na(n_) & n_ <= 0
+  if (any(invalid_n)) {
+    logger::log_info(paste("Dropping", sum(invalid_n), "rows with non-positive sample size for WAIV2 calculation for meta-analysis", meta))
+    df <- df[!invalid_n, ]
+    effect <- effect[!invalid_n]
+    se <- se[!invalid_n]
+    n_ <- n_[!invalid_n]
+  }
+
   if (nrow(df) == 0) {
     logger::log_warn(paste("No data to calculate WAIV2 for meta-analysis", meta))
     return(list(est = NA, t_value = NA))
   }
 
+  suppressWarnings(
+    sqrt_n <- sqrt(n_)
+  )
+
   df_model <- data.frame(
     t = effect / se,
     precision = 1 / se,
-    sqrt_n = sqrt(n_)
+    sqrt_n = sqrt_n
   )
+
+  # Drop any remaining NaN rows from df_model
+  df_model <- df_model[!is.na(df_model$sqrt_n), ]
+
+  if (nrow(df_model) == 0) {
+    logger::log_warn(paste("No valid data to calculate WAIV2 for meta-analysis", meta, "after filtering"))
+    return(list(est = NA, t_value = NA))
+  }
 
   result <- tryCatch(
     {
