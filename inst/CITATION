@@ -1,15 +1,9 @@
-Encoding: UTF-8
+citHeader("To cite package 'pccsurvey' in publications use:")
 
-To cite package 'pccsurvey' in publications use:
-
-  Čala P (2026). _pccsurvey: PCC Survey Analysis Utilities_. R package
-  version 0.0.0.9000.
-
-A BibTeX entry for LaTeX users is
-
-  @Manual{,
-    title = {pccsurvey: PCC Survey Analysis Utilities},
-    author = {Petr Čala},
-    year = {2026},
-    note = {R package version 0.0.0.9000},
-  }
+citEntry(
+  entry = "Manual",
+  title = "pccsurvey: PCC Survey Analysis Utilities",
+  author = person("Petr", "Čala", email = "cala.p@seznam.cz", role = c("aut", "cre")),
+  year = "2026",
+  note = "R package version 0.0.0.9000"
+)
