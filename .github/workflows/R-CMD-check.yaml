@@ -56,7 +56,9 @@ jobs:
       - name: Restore renv
         shell: Rscript {0}
         run: |
-          if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+          if (!requireNamespace("renv", quietly = TRUE)) {
+            install.packages("renv", repos = "https://cloud.r-project.org")
+          }
           renv::restore()
 
       - name: Install dependencies

@@ -58,7 +58,7 @@ check_data_availability <- function(file_name = "chris_data.xlsx", data_dir = "d
     )
   }
 
-  logger::log_info("Data file found: {.file {file_path}}")
+  logger::log_info(paste("Data file found:", file_path))
   invisible(TRUE)
 }
 
@@ -94,7 +94,7 @@ validate_data_structure <- function(df, expected_cols, min_rows = 1) {
     )
   }
 
-  logger::log_debug("Data structure validation passed: {nrow(df)} rows, {ncol(df)} columns")
+  logger::log_debug(paste("Data structure validation passed:", nrow(df), "rows,", ncol(df), "columns"))
   invisible(TRUE)
 }
 
@@ -164,13 +164,13 @@ check_data_file <- function(file_name = "chris_data.xlsx", data_dir = "data", sh
                 result$col_names <- colnames(df_sample)
               },
               error = function(e) {
-                logger::log_warn("Could not read sample data: {.val {conditionMessage(e)}}")
+                logger::log_warn(paste("Could not read sample data:", conditionMessage(e)))
               }
             )
           }
         },
         error = function(e) {
-          logger::log_warn("Could not read Excel file: {.val {conditionMessage(e)}}")
+          logger::log_warn(paste("Could not read Excel file:", conditionMessage(e)))
         }
       )
     }

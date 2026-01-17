@@ -34,7 +34,7 @@ run_chris_analysis <- function(config_path = NULL, use_sample = FALSE) {
     config$data$file_name <- basename(sample_file)
     config$data$sheet_name <- "Main"
     data_dir <- dirname(sample_file) # Use inst/extdata as data directory for sample
-    logger::log_info("Using sample data from {.file {sample_file}}")
+    logger::log_info(paste("Using sample data from:", sample_file))
   }
 
   # Setup logging
@@ -71,7 +71,7 @@ run_chris_analysis <- function(config_path = NULL, use_sample = FALSE) {
     dir.create(config$output$output_dir, recursive = TRUE, showWarnings = FALSE)
   }
   capture.output(print(sessionInfo(), locale = FALSE), file = session_info_file)
-  logger::log_info("Session info saved to {.file {session_info_file}}")
+  logger::log_info(paste("Session info saved to:", session_info_file))
 
   logger::log_info("Chris analysis completed successfully")
   invisible(results)
