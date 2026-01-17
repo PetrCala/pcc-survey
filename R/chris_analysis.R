@@ -24,11 +24,10 @@ get_chris_metaflavours <- function(df, re_method = "ML", re_method_fishers_z = "
   se_s2 <- pcc_se_s2(df)
 
   # Define the various methods to calculate the PCC
+  # RE1/RE2 and UWLS1/UWLS2 use S1/S2 SE formulas
   methods <- list(
-    re = re(df, method = re_method),
     re1 = re(df, se = se_s1, method = re_method),
     re2 = re(df, se = se_s2, method = re_method),
-    uwls = uwls(df),
     uwls1 = uwls(df, se = se_s1),
     uwls2 = uwls(df, se = se_s2),
     uwls3 = uwls3(df),
@@ -161,10 +160,8 @@ calculate_estimator_summary <- function(results_df) {
 
   # Map column names to readable estimator names
   estimator_names <- c(
-    "re_est" = "RE",
     "re1_est" = "RE1",
     "re2_est" = "RE2",
-    "uwls_est" = "UWLS",
     "uwls1_est" = "UWLS1",
     "uwls2_est" = "UWLS2",
     "uwls3_est" = "UWLS3",
