@@ -47,14 +47,15 @@ jobs:
           echo "PKG_CONFIG_PATH=$GETTEXT_PREFIX/lib/pkgconfig" >> $GITHUB_ENV
           echo "CPPFLAGS=-I$GETTEXT_PREFIX/include" >> $GITHUB_ENV
           echo "LDFLAGS=-L$GETTEXT_PREFIX/lib" >> $GITHUB_ENV
+          # Configure R Makevars to use gettext (needed for package compilation)
+          mkdir -p ~/.R
+          echo "CPPFLAGS += -I$GETTEXT_PREFIX/include" >> ~/.R/Makevars
+          echo "LDFLAGS += -L$GETTEXT_PREFIX/lib" >> ~/.R/Makevars
+          echo "PKG_CONFIG_PATH = $GETTEXT_PREFIX/lib/pkgconfig" >> ~/.R/Makevars
 
       - uses: r-lib/actions/setup-renv@v2
         with:
           cache-version: 1
-        env:
-          PKG_CONFIG_PATH: ${{ env.PKG_CONFIG_PATH }}
-          CPPFLAGS: ${{ env.CPPFLAGS }}
-          LDFLAGS: ${{ env.LDFLAGS }}
 
       - name: Install dependencies
         shell: Rscript {0}
