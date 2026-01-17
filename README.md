@@ -9,6 +9,7 @@ This repository provides a **reproducible R package** for meta-analysis of PCC (
 ## Table of Contents
 
 - [Data Requirements](#data-requirements)
+- [Running Replication (R Only)](#running-replication-r-only)
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
 - [Installation](#installation)
@@ -55,6 +56,38 @@ The file must contain a sheet named `"Main"` with the following columns:
 ### Sample Data
 
 A minimal sample dataset is included at `inst/extdata/sample_data.xlsx` for testing. Use `run_chris_analysis(use_sample = TRUE)` to test without the full dataset.
+
+## Running Replication (R Only)
+
+You can run the complete replication workflow using R only, without requiring `make`:
+
+```r
+# 1. Restore dependencies
+renv::restore()
+
+# 2. Load the package
+devtools::load_all()
+
+# 3. Check data availability
+check_data_availability()
+
+# 4. Run the analysis
+results <- run_chris_analysis()
+
+# Results are saved to:
+# - output/chris_results.csv
+# - output/estimator_summary.csv
+# - output/session_info.txt
+# - logs/ (timestamped log files)
+```
+
+**Alternative**: For quick testing without the full dataset:
+
+```r
+renv::restore()
+devtools::load_all()
+results <- run_chris_analysis(use_sample = TRUE)
+```
 
 ## Prerequisites
 
