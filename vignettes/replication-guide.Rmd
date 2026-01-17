@@ -41,7 +41,7 @@ if (!requireNamespace("devtools", quietly = TRUE)) {
 }
 
 # Install the package
-devtools::install_github("USERNAME/pcc-survey")
+devtools::install_github("PetrCala/pcc-survey")
 ```
 
 ### Option B: From Local Source
@@ -75,6 +75,7 @@ This will install all required packages at the exact versions specified in `renv
 1. **Obtain the data file**: The source file is typically named something like `Copy of all_datasets_combined End 2023.xlsx` and contains over 200,000 rows.
 
 2. **Place the file**:
+
    ```r
    # Create data directory if it doesn't exist
    dir.create("data", showWarnings = FALSE)
@@ -84,6 +85,7 @@ This will install all required packages at the exact versions specified in `renv
    ```
 
 3. **Verify the file**:
+
    ```r
    # Check if file exists
    file.exists("data/chris_data.xlsx")
@@ -195,6 +197,7 @@ cat(readLines("output/session_info.txt"), sep = "\n")
 **Problem**: `Data file not found`
 
 **Solution**:
+
 ```r
 # Check data availability
 check_data_file()
@@ -208,6 +211,7 @@ run_chris_analysis(use_sample = TRUE)
 **Problem**: Package installation fails
 
 **Solution**:
+
 ```r
 # Restore via renv
 renv::restore()
@@ -221,6 +225,7 @@ install.packages(c("MAIVE", "metafor", "data.table", ...))
 **Problem**: Config file not found
 
 **Solution**:
+
 ```r
 # Check config path
 config_path <- pccsurvey_extdata("chris_config.yaml")
