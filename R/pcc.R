@@ -325,6 +325,9 @@ waiv2 <- function(df, effect = NULL, se = NULL) {
 #' Calculate Fisher's z
 #'
 #' @note For the calculation, all studies should be present in the dataset.
+#' @param df [data.frame] The data frame with 'effect', 'se', 'sample_size', and 'dof' columns
+#' @param method [character] Random effects method for Fisher's z calculation (default: "ML")
+#' @return [list] A list with properties "est", "t_value"
 #' @export
 fishers_z <- function(df, method = "ML") {
   meta <- unique(df$meta)
@@ -357,6 +360,10 @@ fishers_z <- function(df, method = "ML") {
 }
 
 #' Calculate various summary statistics associated with the PCC data frame
+#'
+#' @param df [data.frame] The PCC data frame with 'sample_size' and 'dof' columns
+#' @param log_results [logical] Whether to log the results (default: TRUE)
+#' @return [list] A list with summary statistics (k_, avg_n, median_n, quantiles, etc.)
 #' @export
 pcc_sum_stats <- function(df, log_results = TRUE) {
   k_ <- nrow(df)

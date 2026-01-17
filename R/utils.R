@@ -10,6 +10,10 @@ pccsurvey_extdata <- function(...) {
 }
 
 #' Read and return the chris config YAML file as a list
+#'
+#' @param path [character] Path to the config YAML file. If NULL, uses the default
+#'   config file from `inst/extdata/chris_config.yaml`.
+#' @return [list] The configuration list loaded from the YAML file
 read_chris_config <- function(path = NULL) {
   if (is.null(path)) {
     path <- pccsurvey_extdata("chris_config.yaml")
