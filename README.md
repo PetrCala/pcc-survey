@@ -8,16 +8,141 @@ This repository provides a **reproducible R package** for meta-analysis of PCC (
 
 ## Table of Contents
 
+- [Data Requirements](#data-requirements)
+- [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
 - [Installation](#installation)
-- [Prerequisites](#prerequisites)
 - [Usage](#usage)
-- [Data Requirements](#data-requirements)
 - [Configuration](#configuration)
 - [Outputs](#outputs)
 - [Reproducibility](#reproducibility)
 - [Troubleshooting](#troubleshooting)
 - [Development](#development)
+
+## Data Requirements
+
+### Full Dataset
+
+The analysis requires `chris_data.xlsx` in the `data/` folder:
+
+1. **Obtain the source file**: Typically named `Copy of all_datasets_combined End 2023.xlsx` (200,000+ rows)
+
+2. **Place the file**:
+
+   ```bash
+   # Copy to data/ folder
+   cp /path/to/source/file.xlsx data/chris_data.xlsx
+   ```
+
+3. **Verify**:
+
+   ```bash
+   ls -lh data/chris_data.xlsx
+   ```
+
+The file must contain a sheet named `"Main"` with the following columns:
+
+- `Title` (study identifier)
+- `Effect type` (should include "correlation" for PCC studies)
+- `Effect size`
+- `Standard error`
+- `t-stat`
+- `Sample size`
+- `Filename` (meta-analysis identifier)
+- `Author 1`
+- `Year published`
+
+### Sample Data
+
+A minimal sample dataset is included at `inst/extdata/sample_data.xlsx` for testing. Use `run_chris_analysis(use_sample = TRUE)` to test without the full dataset.
+
+## Prerequisites
+
+### System Requirements
+
+- **R**: Version >= 4.1.0
+- **make**: For using Makefile commands (optional but recommended)
+
+**Important**: If you plan to use `make` commands (recommended), you must install `make` first. See OS-specific instructions below.
+
+### Installing make
+
+#### macOS
+
+```bash
+# Install Command Line Tools (provides make)
+xcode-select --install
+```
+
+#### Linux (Debian/Ubuntu)
+
+```bash
+sudo apt-get update
+sudo apt-get install -y make
+```
+
+#### Linux (Fedora)
+
+```bash
+sudo dnf install -y make
+```
+
+#### Windows
+
+Three options (pick one):
+
+1. **WSL2 (Recommended)**: Install Ubuntu in WSL2, then install make:
+
+   ```bash
+   sudo apt-get update && sudo apt-get install -y make
+   ```
+
+2. **Git Bash**: Install Git for Windows and MSYS2 for make
+
+3. **Rtools**: Install Rtools for your R version (includes make)
+
+### R Package Dependencies
+
+All dependencies are managed via `renv` and listed in `renv.lock`. Key packages:
+
+- `MAIVE` (from CRAN)
+- `metafor`
+- `data.table`
+- `readxl`
+- And others (see `DESCRIPTION`)
+
+### OS-Specific Setup
+
+#### macOS
+
+```bash
+# Install R from CRAN
+# Install Command Line Tools (provides make)
+xcode-select --install
+```
+
+#### Linux (Debian/Ubuntu)
+
+```bash
+sudo apt-get update
+sudo apt-get install -y r-base make libcurl4-openssl-dev libssl-dev libxml2-dev
+```
+
+#### Linux (Fedora)
+
+```bash
+sudo dnf install -y R make libcurl-devel openssl-devel libxml2-devel
+```
+
+#### Windows
+
+Three options (pick one):
+
+1. **WSL2 (Recommended)**: Install Ubuntu in WSL2, then install R + make
+2. **Git Bash**: Install Git for Windows and MSYS2 for make
+3. **Rtools**: Install Rtools for your R version (includes make)
+
+Ensure `Rscript` is in your `PATH`.
 
 ## Quick Start
 
@@ -30,10 +155,13 @@ make replicate
 ```
 
 This will:
+
 1. Restore all dependencies using `renv`
 2. Check data availability
 3. Run the complete analysis
 4. Generate all outputs
+
+**Note**: Requires `make` to be installed (see [Prerequisites](#prerequisites)).
 
 ### Step-by-Step
 
@@ -79,55 +207,6 @@ The package uses `renv` for dependency management. After cloning:
 Rscript -e "renv::restore()"
 ```
 
-## Prerequisites
-
-### System Requirements
-
-- **R**: Version >= 4.1.0
-- **make**: For using Makefile commands (optional but recommended)
-
-### R Package Dependencies
-
-All dependencies are managed via `renv` and listed in `renv.lock`. Key packages:
-- `MAIVE` (from CRAN)
-- `metafor`
-- `data.table`
-- `readxl`
-- And others (see `DESCRIPTION`)
-
-### OS-Specific Setup
-
-#### macOS
-
-```bash
-# Install R from CRAN
-# Install Command Line Tools (provides make)
-xcode-select --install
-```
-
-#### Linux (Debian/Ubuntu)
-
-```bash
-sudo apt-get update
-sudo apt-get install -y r-base make libcurl4-openssl-dev libssl-dev libxml2-dev
-```
-
-#### Linux (Fedora)
-
-```bash
-sudo dnf install -y R make libcurl-devel openssl-devel libxml2-devel
-```
-
-#### Windows
-
-Three options (pick one):
-
-1. **WSL2 (Recommended)**: Install Ubuntu in WSL2, then install R + make
-2. **Git Bash**: Install Git for Windows and MSYS2 for make
-3. **Rtools**: Install Rtools for your R version (includes make)
-
-Ensure `Rscript` is in your `PATH`.
-
 ## Usage
 
 ### Makefile Commands
@@ -135,6 +214,7 @@ Ensure `Rscript` is in your `PATH`.
 ```bash
 make help          # Show all available commands
 make setup         # Restore dependencies via renv
+make snapshot      # Update renv.lock with current package versions
 make replicate     # Complete replication workflow
 make run           # Run Chris analysis
 make run-psb       # Run PSB analysis
@@ -163,40 +243,6 @@ psb_results <- run_psb_analysis()
 # Check data availability
 check_data_availability()
 ```
-
-## Data Requirements
-
-### Full Dataset
-
-The analysis requires `chris_data.xlsx` in the `data/` folder:
-
-1. **Obtain the source file**: Typically named `Copy of all_datasets_combined End 2023.xlsx` (200,000+ rows)
-
-2. **Place the file**:
-   ```bash
-   # Copy to data/ folder
-   cp /path/to/source/file.xlsx data/chris_data.xlsx
-   ```
-
-3. **Verify**:
-   ```bash
-   ls -lh data/chris_data.xlsx
-   ```
-
-The file must contain a sheet named `"Main"` with the following columns:
-- `Title` (study identifier)
-- `Effect type` (should include "correlation" for PCC studies)
-- `Effect size`
-- `Standard error`
-- `t-stat`
-- `Sample size`
-- `Filename` (meta-analysis identifier)
-- `Author 1`
-- `Year published`
-
-### Sample Data
-
-A minimal sample dataset is included at `inst/extdata/sample_data.xlsx` for testing. Use `run_chris_analysis(use_sample = TRUE)` to test without the full dataset.
 
 ## Configuration
 
@@ -239,6 +285,7 @@ The package uses `renv` to lock all dependency versions. The `renv.lock` file en
 ### Session Information
 
 Each analysis run saves `session_info.txt` with:
+
 - R version
 - Package versions
 - Platform information
@@ -254,6 +301,7 @@ For verification, compare outputs to reference results (if provided in `inst/exp
 **Error**: `Data file not found: data/chris_data.xlsx`
 
 **Solution**:
+
 1. Verify the file exists: `ls -lh data/chris_data.xlsx`
 2. Check file permissions: `chmod 644 data/chris_data.xlsx`
 3. Use sample data for testing: `run_chris_analysis(use_sample = TRUE)`
@@ -263,6 +311,7 @@ For verification, compare outputs to reference results (if provided in `inst/exp
 **Error**: Package installation fails
 
 **Solution**:
+
 ```bash
 # Restore via renv
 make setup
@@ -292,6 +341,7 @@ sudo dnf install -y libcurl-devel openssl-devel libxml2-devel
 #### Windows: Rscript Not Found
 
 Add R to your PATH:
+
 - R installation directory → `bin` folder
 - Or use Rtools which includes R in PATH
 
@@ -300,6 +350,7 @@ Add R to your PATH:
 **Error**: Cannot read Excel file
 
 **Solutions**:
+
 1. Verify file is not corrupted
 2. Check sheet name matches config (`"Main"` by default)
 3. Ensure `readxl` package is installed: `install.packages("readxl")`
@@ -309,6 +360,7 @@ Add R to your PATH:
 **Error**: renv restore fails
 
 **Solutions**:
+
 ```r
 # Reinitialize renv
 renv::init()
@@ -361,11 +413,12 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ## Author
 
-Petr Čala - cala.p@seznam.cz
+Petr Čala - <cala.p@seznam.cz>
 
 ## Acknowledgments
 
 This package uses the following key dependencies:
+
 - `MAIVE` - Meta-Analysis Instrumental Variable Estimator
 - `metafor` - Meta-Analysis Package for R
 - And others (see `DESCRIPTION`)

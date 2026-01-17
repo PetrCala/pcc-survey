@@ -74,5 +74,11 @@ replicate:
 	@echo "Step 3: Running analysis..."
 	@cd "$(PROJECT_DIR)" && $(MAKE) run
 	@echo "=== Replication workflow completed successfully ==="
+	@echo ""
+	@echo "Results are available in:"
+	@echo "  - $(PROJECT_DIR)/output/chris_results.csv (main analysis results)"
+	@echo "  - $(PROJECT_DIR)/output/estimator_summary.csv (estimator summary statistics)"
+	@echo "  - $(PROJECT_DIR)/output/session_info.txt (session information for reproducibility)"
+	@echo "  - $(PROJECT_DIR)/logs/ (timestamped log files)"
 
 
