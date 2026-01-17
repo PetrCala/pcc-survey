@@ -324,10 +324,10 @@ waiv2 <- function(df, effect = NULL, se = NULL) {
 
 #' Calculate Fisher's z
 #'
-#' @note For the calculation, all studies should be present in the dataset.
 #' @param df [data.frame] The data frame with 'effect', 'se', 'sample_size', and 'dof' columns
 #' @param method [character] Random effects method for Fisher's z calculation (default: "ML")
 #' @return [list] A list with properties "est", "t_value"
+#' @note For the calculation, all studies should be present in the dataset.
 #' @export
 fishers_z <- function(df, method = "ML") {
   meta <- unique(df$meta)
