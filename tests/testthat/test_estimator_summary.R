@@ -5,7 +5,11 @@ test_that("calculate_estimator_summary excludes 'All meta-analyses' row", {
   df <- data.frame(
     meta = c("Meta1", "Meta2", "Meta3", "All meta-analyses"),
     re_est = c(0.1, 0.2, 0.3, 0.15),
+    re1_est = c(0.11, 0.21, 0.31, 0.16),
+    re2_est = c(0.12, 0.22, 0.32, 0.17),
     uwls_est = c(0.15, 0.25, 0.35, 0.2),
+    uwls1_est = c(0.16, 0.26, 0.36, 0.21),
+    uwls2_est = c(0.17, 0.27, 0.37, 0.22),
     uwls3_est = c(0.12, 0.22, 0.32, 0.18),
     hsma_est = c(0.11, 0.21, 0.31, 0.16),
     fishers_z_est = c(0.13, 0.23, 0.33, 0.19)
@@ -16,8 +20,8 @@ test_that("calculate_estimator_summary excludes 'All meta-analyses' row", {
   # Should have 10 rows (one per statistic)
   expect_equal(nrow(result), 10)
 
-  # Should have Statistic column plus 5 estimator columns
-  expect_equal(ncol(result), 6)
+  # Should have Statistic column plus 10 estimator columns
+  expect_equal(ncol(result), 11)
 
   # RE mean should be mean of 0.1, 0.2, 0.3 (excluding 0.15 from "All meta-analyses")
   mean_row <- result[result$Statistic == "Mean", ]
@@ -29,7 +33,11 @@ test_that("calculate_estimator_summary calculates correct statistics", {
   df <- data.frame(
     meta = c("Meta1", "Meta2", "Meta3"),
     re_est = c(0.1, 0.2, 0.3),
+    re1_est = c(0.11, 0.21, 0.31),
+    re2_est = c(0.12, 0.22, 0.32),
     uwls_est = c(0.15, 0.25, 0.35),
+    uwls1_est = c(0.16, 0.26, 0.36),
+    uwls2_est = c(0.17, 0.27, 0.37),
     uwls3_est = c(0.12, 0.22, 0.32),
     hsma_est = c(0.11, 0.21, 0.31),
     fishers_z_est = c(0.13, 0.23, 0.33)
@@ -41,6 +49,10 @@ test_that("calculate_estimator_summary calculates correct statistics", {
   count_row <- result[result$Statistic == "count", ]
   expect_equal(count_row$RE, 3L)
   expect_equal(count_row$UWLS, 3L)
+  expect_equal(count_row$RE1, 3L)
+  expect_equal(count_row$RE2, 3L)
+  expect_equal(count_row$UWLS1, 3L)
+  expect_equal(count_row$UWLS2, 3L)
 
   # Check RE statistics
   expect_equal(result[result$Statistic == "Mean", ]$RE, 0.2)
@@ -58,7 +70,11 @@ test_that("calculate_estimator_summary handles NA values correctly", {
   df <- data.frame(
     meta = c("Meta1", "Meta2", "Meta3"),
     re_est = c(0.1, NA_real_, 0.3),
+    re1_est = c(0.11, 0.21, 0.31),
+    re2_est = c(0.12, 0.22, 0.32),
     uwls_est = c(0.15, 0.25, NA_real_),
+    uwls1_est = c(0.16, 0.26, 0.36),
+    uwls2_est = c(0.17, 0.27, 0.37),
     uwls3_est = c(0.12, 0.22, 0.32),
     hsma_est = c(NA_real_, NA_real_, NA_real_),
     fishers_z_est = c(0.13, 0.23, 0.33)
@@ -89,7 +105,11 @@ test_that("calculate_estimator_summary has correct column names and structure", 
   df <- data.frame(
     meta = c("Meta1", "Meta2"),
     re_est = c(0.1, 0.2),
+    re1_est = c(0.11, 0.21),
+    re2_est = c(0.12, 0.22),
     uwls_est = c(0.15, 0.25),
+    uwls1_est = c(0.16, 0.26),
+    uwls2_est = c(0.17, 0.27),
     uwls3_est = c(0.12, 0.22),
     hsma_est = c(0.11, 0.21),
     fishers_z_est = c(0.13, 0.23)
@@ -99,7 +119,7 @@ test_that("calculate_estimator_summary has correct column names and structure", 
 
   # Check column names - should have Statistic plus estimator columns
   expect_true("Statistic" %in% colnames(result))
-  expect_true(all(c("RE", "UWLS", "UWLS3", "HSMA", "Fisher's z") %in% colnames(result)))
+  expect_true(all(c("RE", "RE1", "RE2", "UWLS", "UWLS1", "UWLS2", "UWLS3", "HSMA", "Fisher's z") %in% colnames(result)))
 
   # Check that all statistics are present
   expected_stats <- c("count", "minimum", "max", "missing", "skewness", "median", "IQR", "trimmed_mean_10", "Mean", "SD")
@@ -117,7 +137,11 @@ test_that("calculate_estimator_summary handles single meta-analysis", {
   df <- data.frame(
     meta = c("Meta1", "All meta-analyses"),
     re_est = c(0.1, 0.15),
+    re1_est = c(0.11, 0.16),
+    re2_est = c(0.12, 0.17),
     uwls_est = c(0.15, 0.2),
+    uwls1_est = c(0.16, 0.21),
+    uwls2_est = c(0.17, 0.22),
     uwls3_est = c(0.12, 0.18),
     hsma_est = c(0.11, 0.16),
     fishers_z_est = c(0.13, 0.19)
@@ -140,7 +164,11 @@ test_that("calculate_estimator_summary calculates IQR correctly", {
   df <- data.frame(
     meta = c("Meta1", "Meta2", "Meta3", "Meta4", "Meta5"),
     re_est = c(0.1, 0.2, 0.3, 0.4, 0.5),
+    re1_est = c(0.11, 0.21, 0.31, 0.41, 0.51),
+    re2_est = c(0.12, 0.22, 0.32, 0.42, 0.52),
     uwls_est = c(0.15, 0.25, 0.35, 0.45, 0.55),
+    uwls1_est = c(0.16, 0.26, 0.36, 0.46, 0.56),
+    uwls2_est = c(0.17, 0.27, 0.37, 0.47, 0.57),
     uwls3_est = c(0.12, 0.22, 0.32, 0.42, 0.52),
     hsma_est = c(0.11, 0.21, 0.31, 0.41, 0.51),
     fishers_z_est = c(0.13, 0.23, 0.33, 0.43, 0.53)
@@ -159,7 +187,11 @@ test_that("calculate_estimator_summary calculates trimmed mean correctly", {
   df <- data.frame(
     meta = c("Meta1", "Meta2", "Meta3", "Meta4", "Meta5"),
     re_est = c(0.1, 0.2, 0.3, 0.4, 0.5),
+    re1_est = c(0.11, 0.21, 0.31, 0.41, 0.51),
+    re2_est = c(0.12, 0.22, 0.32, 0.42, 0.52),
     uwls_est = c(0.15, 0.25, 0.35, 0.45, 0.55),
+    uwls1_est = c(0.16, 0.26, 0.36, 0.46, 0.56),
+    uwls2_est = c(0.17, 0.27, 0.37, 0.47, 0.57),
     uwls3_est = c(0.12, 0.22, 0.32, 0.42, 0.52),
     hsma_est = c(0.11, 0.21, 0.31, 0.41, 0.51),
     fishers_z_est = c(0.13, 0.23, 0.33, 0.43, 0.53)

@@ -17,6 +17,80 @@ pcc_variance <- function(df, offset) {
   variance
 }
 
+#' Calculate PCC standard error using S1 formula
+#'
+#' S1 = sqrt((1 - r_p^2) / df)
+#' where r_p = t / sqrt(t^2 + df)
+#'
+#' @param df [data.frame] The data frame with columns 'effect', 'dof', and either 't_value' or 'se'
+#' @return [vector] A vector of PCC standard errors using S1 formula
+#' @export
+pcc_se_s1 <- function(df) {
+  stopifnot(sum(is.na(df$dof)) == 0)
+  stopifnot("effect" %in% colnames(df))
+  stopifnot("dof" %in% colnames(df))
+
+  # Calculate t_value if not present
+  if (!"t_value" %in% colnames(df)) {
+    if (!"se" %in% colnames(df)) {
+      cli::cli_abort("Either 't_value' or 'se' column must be present in df")
+    }
+    t_value <- df$effect / df$se
+    t_value[is.infinite(t_value)] <- NA
+  } else {
+    t_value <- df$t_value
+  }
+
+  # Calculate r_p = t / sqrt(t^2 + df)
+  suppressWarnings(
+    r_p <- t_value / sqrt(t_value^2 + df$dof)
+  )
+
+  # Calculate S1 = sqrt((1 - r_p^2) / df)
+  suppressWarnings(
+    se_s1 <- sqrt((1 - r_p^2) / df$dof)
+  )
+
+  se_s1
+}
+
+#' Calculate PCC standard error using S2 formula
+#'
+#' S2 = sqrt(((1 - r_p^2)^2) / df) = (1 - r_p^2) / sqrt(df)
+#' where r_p = t / sqrt(t^2 + df)
+#'
+#' @param df [data.frame] The data frame with columns 'effect', 'dof', and either 't_value' or 'se'
+#' @return [vector] A vector of PCC standard errors using S2 formula
+#' @export
+pcc_se_s2 <- function(df) {
+  stopifnot(sum(is.na(df$dof)) == 0)
+  stopifnot("effect" %in% colnames(df))
+  stopifnot("dof" %in% colnames(df))
+
+  # Calculate t_value if not present
+  if (!"t_value" %in% colnames(df)) {
+    if (!"se" %in% colnames(df)) {
+      cli::cli_abort("Either 't_value' or 'se' column must be present in df")
+    }
+    t_value <- df$effect / df$se
+    t_value[is.infinite(t_value)] <- NA
+  } else {
+    t_value <- df$t_value
+  }
+
+  # Calculate r_p = t / sqrt(t^2 + df)
+  suppressWarnings(
+    r_p <- t_value / sqrt(t_value^2 + df$dof)
+  )
+
+  # Calculate S2 = sqrt(((1 - r_p^2)^2) / df) = (1 - r_p^2) / sqrt(df)
+  suppressWarnings(
+    se_s2 <- (1 - r_p^2) / sqrt(df$dof)
+  )
+
+  se_s2
+}
+
 #' Calculate random effects
 #'
 #' @param df [data.frame] The data frame to calculate the RE with
