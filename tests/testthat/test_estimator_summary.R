@@ -37,7 +37,8 @@ test_that("calculate_estimator_summary calculates correct statistics", {
     uwls2_est = c(0.17, 0.27, 0.37),
     uwls3_est = c(0.12, 0.22, 0.32),
     hsma_est = c(0.11, 0.21, 0.31),
-    fishers_z_est = c(0.13, 0.23, 0.33)
+    fishers_z_est = c(0.13, 0.23, 0.33),
+    waiv2_est = c(0.14, 0.24, 0.34)
   )
 
   result <- calculate_estimator_summary(df)
@@ -70,7 +71,8 @@ test_that("calculate_estimator_summary handles NA values correctly", {
     uwls2_est = c(0.17, 0.27, 0.37),
     uwls3_est = c(0.12, 0.22, 0.32),
     hsma_est = c(NA_real_, NA_real_, NA_real_),
-    fishers_z_est = c(0.13, 0.23, 0.33)
+    fishers_z_est = c(0.13, 0.23, 0.33),
+    waiv2_est = c(0.14, 0.24, 0.34)
   )
 
   result <- calculate_estimator_summary(df)
@@ -103,14 +105,15 @@ test_that("calculate_estimator_summary has correct column names and structure", 
     uwls2_est = c(0.17, 0.27),
     uwls3_est = c(0.12, 0.22),
     hsma_est = c(0.11, 0.21),
-    fishers_z_est = c(0.13, 0.23)
+    fishers_z_est = c(0.13, 0.23),
+    waiv2_est = c(0.14, 0.24)
   )
 
   result <- calculate_estimator_summary(df)
 
   # Check column names - should have Statistic plus estimator columns
   expect_true("Statistic" %in% colnames(result))
-  expect_true(all(c("RE1", "RE2", "UWLS1", "UWLS2", "UWLS3", "HSMA", "Fisher's z") %in% colnames(result)))
+  expect_true(all(c("RE1", "RE2", "UWLS1", "UWLS2", "UWLS3", "HSMA", "Fisher's z", "WAIV2") %in% colnames(result)))
 
   # Check that all statistics are present
   expected_stats <- c("count", "minimum", "max", "missing", "skewness", "median", "IQR", "trimmed_mean_10", "Mean", "SD")
@@ -133,7 +136,8 @@ test_that("calculate_estimator_summary handles single meta-analysis", {
     uwls2_est = c(0.17, 0.22),
     uwls3_est = c(0.12, 0.18),
     hsma_est = c(0.11, 0.16),
-    fishers_z_est = c(0.13, 0.19)
+    fishers_z_est = c(0.13, 0.19),
+    waiv2_est = c(0.14, 0.20)
   )
 
   result <- calculate_estimator_summary(df)
@@ -158,7 +162,8 @@ test_that("calculate_estimator_summary calculates IQR correctly", {
     uwls2_est = c(0.17, 0.27, 0.37, 0.47, 0.57),
     uwls3_est = c(0.12, 0.22, 0.32, 0.42, 0.52),
     hsma_est = c(0.11, 0.21, 0.31, 0.41, 0.51),
-    fishers_z_est = c(0.13, 0.23, 0.33, 0.43, 0.53)
+    fishers_z_est = c(0.13, 0.23, 0.33, 0.43, 0.53),
+    waiv2_est = c(0.14, 0.24, 0.34, 0.44, 0.54)
   )
 
   result <- calculate_estimator_summary(df)
@@ -179,7 +184,8 @@ test_that("calculate_estimator_summary calculates trimmed mean correctly", {
     uwls2_est = c(0.17, 0.27, 0.37, 0.47, 0.57),
     uwls3_est = c(0.12, 0.22, 0.32, 0.42, 0.52),
     hsma_est = c(0.11, 0.21, 0.31, 0.41, 0.51),
-    fishers_z_est = c(0.13, 0.23, 0.33, 0.43, 0.53)
+    fishers_z_est = c(0.13, 0.23, 0.33, 0.43, 0.53),
+    waiv2_est = c(0.14, 0.24, 0.34, 0.44, 0.54)
   )
 
   result <- calculate_estimator_summary(df)
