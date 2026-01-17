@@ -1,7 +1,7 @@
 #' Calculate the PCC variance.
 #'
 #' @param df [data.frame] The data frame upon which to calculate the PCC vairance. Should include the columns 'effect', 'sample_size', 'dof'
-#' @param offset [int] An offset value to subtract from the degrees of freedom
+#' @param offset [numeric] An offset value to subtract from the degrees of freedom
 #'  in case they are missing.
 #' @return [vector] A vector of PCC variances.
 #' @export

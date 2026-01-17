@@ -8,4 +8,12 @@
 ^\.dockerignore$
 ^Dockerfile$
 ^\.Rprofile$
-
+^_cache$
+^communication$
+^docs$
+^local$
+^logs$
+^output$
+^utils$
+^Makefile$
+^.lintr$
