@@ -1,0 +1,13 @@
+To cite package 'pccsurvey' in publications use:
+
+  Čala P (2026). _pccsurvey: PCC Survey Analysis Utilities_. R package
+  version 0.0.0.9000.
+
+A BibTeX entry for LaTeX users is
+
+  @Manual{,
+    title = {pccsurvey: PCC Survey Analysis Utilities},
+    author = {Petr Čala},
+    year = {2026},
+    note = {R package version 0.0.0.9000},
+  }

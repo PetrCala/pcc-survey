@@ -7,22 +7,25 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+Depends: R (>= 4.1.0)
 Imports:
     AER,
     cachem,
     cli,
     data.table,
+    digest,
     logger,
     MAIVE,
     memoise,
     metafor,
-    plm,
     readxl,
     stats,
     utils,
-    writexl,
     yaml
 Suggests:
     devtools,
+    knitr,
     lintr,
+    rmarkdown,
     roxygen2
+VignetteBuilder: knitr

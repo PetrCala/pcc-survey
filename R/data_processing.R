@@ -9,10 +9,10 @@
 #' @return [data.frame] The loaded data
 #' @export
 read_chris_data <- function(file_name = "chris_data.xlsx", sheet_name = "Main", data_dir = "data") {
+  # Check data availability first (provides helpful error messages)
+  check_data_availability(file_name = file_name, data_dir = data_dir, sheet_name = sheet_name)
+
   file_path <- file.path(data_dir, file_name)
-  if (!file.exists(file_path)) {
-    cli::cli_abort("Data file not found: {.file {file_path}}")
-  }
 
   logger::log_debug("Reading data from ", file_path)
   df <- readxl::read_excel(path = file_path, sheet = sheet_name)

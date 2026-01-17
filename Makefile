@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help setup document build check lint run run-psb validate clean doctor test
+.PHONY: help setup snapshot document build check lint run run-psb validate clean doctor test replicate
 
 # Absolute path to this repo's root (directory containing this Makefile).
 # This avoids hard-coding the project directory name and works even if `make`
@@ -15,7 +15,9 @@ help:
 	@echo ""
 	@echo "Targets:"
 	@echo "  help      Show this help"
-	@echo "  setup     Install dependencies via devtools (bootstraps devtools if needed)"
+	@echo "  setup     Restore dependencies via renv (creates reproducible environment)"
+	@echo "  snapshot  Update renv.lock with current package versions (run after changing dependencies)"
+	@echo "  replicate Run complete replication workflow (setup + data check + analysis)"
 	@echo "  document  Generate roxygen docs (NAMESPACE/man)"
 	@echo "  check     Run R CMD check via devtools"
 	@echo "  lint      Run lintr on the package (fails on lint)"
@@ -28,7 +30,10 @@ help:
 	@echo ""
 
 setup:
-	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) install.packages('devtools', repos='https://cloud.r-project.org'); devtools::install_deps(dependencies = TRUE)"
+	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('renv', quietly=TRUE)) install.packages('renv', repos='https://cloud.r-project.org'); renv::restore()"
+
+snapshot:
+	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('renv', quietly=TRUE)) install.packages('renv', repos='https://cloud.r-project.org'); renv::snapshot(force = TRUE, prompt = FALSE)"
 
 document:
 	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup'); devtools::document()"
@@ -59,5 +64,15 @@ clean:
 doctor:
 	@$(RSCRIPT) -e "cat('R version:', R.version.string, '\n')"
 	@$(RSCRIPT) -e "if (requireNamespace('devtools', quietly=TRUE)) { devtools::session_info() } else { cat('devtools not installed (run make setup)\\n') }"
+
+replicate:
+	@echo "=== Starting replication workflow ==="
+	@echo "Step 1: Restoring dependencies..."
+	@cd "$(PROJECT_DIR)" && $(MAKE) setup
+	@echo "Step 2: Checking data availability..."
+	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup'); devtools::load_all('.'); if (exists('check_data_availability')) { check_data_availability() } else { cat('Data check function not yet implemented\\n') }"
+	@echo "Step 3: Running analysis..."
+	@cd "$(PROJECT_DIR)" && $(MAKE) run
+	@echo "=== Replication workflow completed successfully ==="
 
 

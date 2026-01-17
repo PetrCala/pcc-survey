@@ -1,5 +1,11 @@
+^renv$
+^renv\.lock$
 ^\.cursor$
 ^\.git$
 ^\.gitignore$
+^\.github$
 ^data$
+^\.dockerignore$
+^Dockerfile$
+^\.Rprofile$
 

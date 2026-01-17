@@ -1,0 +1,16 @@
+.git
+.gitignore
+.Rhistory
+.RData
+.Ruserdata
+_cache/
+logs/
+output/
+renv/library/
+renv/staging/
+.DS_Store
+*.log
+*.csv
+*.xlsx
+!inst/extdata/*.xlsx
+!inst/extdata/*.yaml

@@ -55,9 +55,10 @@ get_chris_metaflavours <- function(df, re_method = "ML", re_method_fishers_z = "
 #' Run the Chris analysis
 #'
 #' @param config [list] Configuration list loaded from chris_config.yaml
+#' @param data_dir [character] Directory containing the data file (default: "data")
 #' @return [data.frame] The analysis results
 #' @export
-chris_analyse <- function(config) {
+chris_analyse <- function(config, data_dir = "data") {
   logger::log_info("Running the chris analysis")
 
   # Read the data (with caching if enabled)
@@ -65,7 +66,8 @@ chris_analyse <- function(config) {
     config,
     read_chris_data,
     file_name = config$data$file_name,
-    sheet_name = config$data$sheet_name
+    sheet_name = config$data$sheet_name,
+    data_dir = data_dir
   )
 
   # Clean the data (with caching if enabled)

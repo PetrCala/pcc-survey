@@ -1,0 +1,292 @@
+---
+title: "Replication Guide"
+author: "Petr Čala"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Replication Guide}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  eval = FALSE
+)
+```
+
+# Replication Guide for pccsurvey
+
+This vignette provides a step-by-step guide to replicating the analysis results using the `pccsurvey` package.
+
+## Prerequisites
+
+Before starting, ensure you have:
+
+1. **R** version >= 4.1.0 installed
+2. **Git** (if cloning from repository)
+3. **make** (optional, for Makefile commands)
+4. The required data file (see below)
+
+## Step 1: Installation
+
+### Option A: From GitHub (Development Version)
+
+```r
+# Install devtools if needed
+if (!requireNamespace("devtools", quietly = TRUE)) {
+  install.packages("devtools")
+}
+
+# Install the package
+devtools::install_github("USERNAME/pcc-survey")
+```
+
+### Option B: From Local Source
+
+```r
+# Navigate to package directory
+setwd("/path/to/pcc-survey")
+
+# Install
+devtools::install()
+```
+
+## Step 2: Environment Setup
+
+The package uses `renv` for reproducible dependency management.
+
+```r
+# Load the package
+library(pccsurvey)
+
+# Restore the exact environment
+renv::restore()
+```
+
+This will install all required packages at the exact versions specified in `renv.lock`.
+
+## Step 3: Data Preparation
+
+### Full Dataset
+
+1. **Obtain the data file**: The source file is typically named something like `Copy of all_datasets_combined End 2023.xlsx` and contains over 200,000 rows.
+
+2. **Place the file**:
+   ```r
+   # Create data directory if it doesn't exist
+   dir.create("data", showWarnings = FALSE)
+   
+   # Copy your file to data/chris_data.xlsx
+   # (Do this manually or via file system)
+   ```
+
+3. **Verify the file**:
+   ```r
+   # Check if file exists
+   file.exists("data/chris_data.xlsx")
+   
+   # Check data availability
+   check_data_availability()
+   ```
+
+### Sample Data (For Testing)
+
+If you want to test without the full dataset:
+
+```r
+# Use the included sample data
+run_chris_analysis(use_sample = TRUE)
+```
+
+## Step 4: Run the Analysis
+
+### Basic Analysis
+
+```r
+# Load the package
+library(pccsurvey)
+
+# Run the complete analysis
+results <- run_chris_analysis()
+```
+
+### With Custom Configuration
+
+```r
+# Specify custom config path
+results <- run_chris_analysis(
+  config_path = "path/to/custom_config.yaml"
+)
+```
+
+### Using Makefile (Alternative)
+
+```bash
+# From terminal
+make setup    # Restore dependencies
+make run      # Run analysis
+```
+
+Or use the one-command replication:
+
+```bash
+make replicate
+```
+
+## Step 5: Verify Results
+
+### Check Output Files
+
+```r
+# Main results
+results_file <- "output/chris_results.csv"
+if (file.exists(results_file)) {
+  results_df <- read.csv(results_file)
+  head(results_df)
+  nrow(results_df)
+}
+
+# Estimator summary (Table 1)
+summary_file <- "output/estimator_summary.csv"
+if (file.exists(summary_file)) {
+  summary_df <- read.csv(summary_file)
+  print(summary_df)
+}
+
+# Session info
+session_file <- "output/session_info.txt"
+if (file.exists(session_file)) {
+  cat(readLines(session_file), sep = "\n")
+}
+```
+
+### Expected Output Structure
+
+The main results file (`chris_results.csv`) should contain:
+
+- One row per meta-analysis (plus "All meta-analyses" row)
+- Columns for each estimator method:
+  - `re1_est`, `re2_est` - Random effects estimates
+  - `uwls1_est`, `uwls2_est`, `uwls3_est` - UWLS estimates
+  - `hsma_est` - Hunter-Schmidt estimate
+  - `fishers_z_est` - Fisher's z estimate
+  - `waiv2_est` - WAIV2 estimate
+- Summary statistics: `k_`, `avg_n`, `median_n`, etc.
+
+## Step 6: Session Information
+
+For reproducibility, session information is automatically saved:
+
+```r
+# View session info
+sessionInfo()
+
+# Or read from saved file
+cat(readLines("output/session_info.txt"), sep = "\n")
+```
+
+## Troubleshooting
+
+### Data File Issues
+
+**Problem**: `Data file not found`
+
+**Solution**:
+```r
+# Check data availability
+check_data_file()
+
+# Use sample data for testing
+run_chris_analysis(use_sample = TRUE)
+```
+
+### Dependency Issues
+
+**Problem**: Package installation fails
+
+**Solution**:
+```r
+# Restore via renv
+renv::restore()
+
+# Or install missing packages manually
+install.packages(c("MAIVE", "metafor", "data.table", ...))
+```
+
+### Configuration Issues
+
+**Problem**: Config file not found
+
+**Solution**:
+```r
+# Check config path
+config_path <- pccsurvey_extdata("chris_config.yaml")
+file.exists(config_path)
+
+# Or specify custom path
+run_chris_analysis(config_path = "path/to/config.yaml")
+```
+
+## Advanced Usage
+
+### Running PSB Analysis
+
+```r
+# Run Publication Selection Bias analysis
+psb_results <- run_psb_analysis()
+
+# Results saved to output/psb_results.csv
+```
+
+### Custom Data Directory
+
+```r
+# Use data from different location
+config <- yaml::read_yaml(pccsurvey_extdata("chris_config.yaml"))
+results <- chris_analyse(config, data_dir = "custom/data/path")
+```
+
+### Filtering to Single Meta-Analysis
+
+Edit `inst/extdata/chris_config.yaml`:
+
+```yaml
+filtering:
+  use_single_meta_analysis: "substring_of_meta_name"
+```
+
+## Verification Checklist
+
+- [ ] All dependencies installed via `renv::restore()`
+- [ ] Data file present in `data/chris_data.xlsx`
+- [ ] Analysis completed without errors
+- [ ] Output files generated:
+  - [ ] `output/chris_results.csv`
+  - [ ] `output/estimator_summary.csv`
+  - [ ] `output/session_info.txt`
+- [ ] Log file created in `logs/`
+- [ ] Results match expected structure
+
+## Reproducibility Notes
+
+1. **Package Versions**: All versions are locked in `renv.lock`
+2. **R Version**: Minimum R 4.1.0 required
+3. **Platform**: Tested on Linux, macOS, and Windows
+4. **Session Info**: Automatically captured in each run
+
+## Getting Help
+
+- Check the [README](README.md) for general information
+- Review [troubleshooting section](README.md#troubleshooting)
+- Check log files in `logs/` directory
+- Open an issue on GitHub
+
+## References
+
+For more information about the methods used:
+
+- MAIVE: Irsova et al. (2025) - Meta-Analysis Instrumental Variable Estimator
+- Meta-analysis methods: See package documentation for individual functions
