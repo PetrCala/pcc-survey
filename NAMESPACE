@@ -3,12 +3,9 @@
 
 export(calculate_estimator_summary)
 export(calculate_ess)
-export(calculate_falsely_positive)
 export(calculate_maive)
 export(calculate_observed_significant)
 export(calculate_psb_measures)
-export(calculate_psst)
-export(calculate_psss)
 export(calculate_study_power)
 export(convert_inverse_relationships)
 export(fishers_z)

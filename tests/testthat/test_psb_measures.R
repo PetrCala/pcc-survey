@@ -6,17 +6,21 @@ test_that("calculate_psb_measures returns all required measures", {
     se = c(0.1, 0.1, 0.1),
     t_value = c(1.0, 2.0, 3.0),
     meta = "test_meta",
-    study = c("study1", "study2", "study3")
+    study = c("study1", "study2", "study3"),
+    dof = c(43, 93, 143)
   )
 
-  mean_effect <- 0.2
-  measures <- calculate_psb_measures(df, "test_method", mean_effect)
+  uwls_estimate <- 0.2
+  tau2 <- get_re1_tau2(df)
+  if (is.na(tau2)) tau2 <- 0.0 # Fallback for test
+  measures <- calculate_psb_measures(df, "test_method", uwls_estimate, tau2)
 
   # Should return all required fields
   expect_named(measures, c(
-    "ess", "psst", "psss", "falsely_positive",
-    "observed_prop", "expected_prop",
-    "observed_count", "expected_count"
+    "ess_prop",
+    "esig",
+    "pss",
+    "k"
   ))
 
   # All should be numeric
@@ -29,36 +33,38 @@ test_that("calculate_psb_measures calculates correctly", {
     se = c(0.1, 0.1, 0.1),
     t_value = c(1.0, 2.0, 3.0),
     meta = "test_meta",
-    study = c("study1", "study2", "study3")
+    study = c("study1", "study2", "study3"),
+    dof = c(43, 93, 143)
   )
 
-  mean_effect <- 0.2
-  measures <- calculate_psb_measures(df, "test_method", mean_effect)
+  uwls_estimate <- 0.2
+  tau2 <- get_re1_tau2(df)
+  if (is.na(tau2)) tau2 <- 0.0 # Fallback for test
+  measures <- calculate_psb_measures(df, "test_method", uwls_estimate, tau2)
 
   # Verify individual calculations
-  ess_manual <- calculate_ess(df, mean_effect)
-  expect_equal(measures$ess, ess_manual, tolerance = 1e-6)
-
-  psst_manual <- calculate_psst(df, mean_effect)
-  expect_equal(measures$psst, psst_manual, tolerance = 1e-6)
-
-  psss_manual <- calculate_psss(df, mean_effect)
-  expect_equal(measures$psss, psss_manual, tolerance = 1e-6)
-
-  fp_manual <- calculate_falsely_positive(df, mean_effect)
-  expect_equal(measures$falsely_positive, fp_manual, tolerance = 1e-6)
+  n_total <- nrow(df)
+  ess_count_manual <- calculate_ess(df, uwls_estimate, tau2)
+  ess_prop_manual <- if (n_total > 0) ess_count_manual / n_total else NA_real_
+  expect_equal(measures$ess_prop, ess_prop_manual, tolerance = 1e-6)
+  
+  # Verify k
+  expect_equal(measures$k, n_total)
 })
 
-test_that("calculate_psb_measures handles NA mean_effect", {
+test_that("calculate_psb_measures handles NA uwls_estimate", {
   df <- data.frame(
     effect = c(0.1, 0.2, 0.3),
     se = c(0.1, 0.1, 0.1),
     t_value = c(1.0, 2.0, 3.0),
     meta = "test_meta",
-    study = c("study1", "study2", "study3")
+    study = c("study1", "study2", "study3"),
+    dof = c(43, 93, 143)
   )
 
-  measures <- calculate_psb_measures(df, "test_method", NA_real_)
+  tau2 <- get_re1_tau2(df)
+  if (is.na(tau2)) tau2 <- 0.0 # Fallback for test
+  measures <- calculate_psb_measures(df, "test_method", NA_real_, tau2)
 
   # All measures should be NA
   expect_true(all(sapply(measures, is.na)))
@@ -89,15 +95,11 @@ test_that("get_psb_metaflavours returns data frame with correct structure", {
   expect_true("ess_uwls" %in% colnames(result))
   expect_true("ess_uwls3" %in% colnames(result))
   expect_true("ess_hs" %in% colnames(result))
-  expect_true("psst_uwls" %in% colnames(result))
-  expect_true("psst_uwls3" %in% colnames(result))
-  expect_true("psst_hs" %in% colnames(result))
-  expect_true("psss_uwls" %in% colnames(result))
-  expect_true("psss_uwls3" %in% colnames(result))
-  expect_true("psss_hs" %in% colnames(result))
-  expect_true("falsely_positive_uwls" %in% colnames(result))
-  expect_true("falsely_positive_uwls3" %in% colnames(result))
-  expect_true("falsely_positive_hs" %in% colnames(result))
+  expect_true("esig_uwls" %in% colnames(result))
+  expect_true("esig_uwls3" %in% colnames(result))
+  expect_true("esig_hs" %in% colnames(result))
+  expect_true("pss" %in% colnames(result))
+  expect_true("k" %in% colnames(result))
 })
 
 test_that("get_psb_metaflavours calculates measures for all three methods", {
@@ -132,16 +134,16 @@ test_that("get_psb_metaflavours includes observed values", {
 
   result <- get_psb_metaflavours(df)
 
-  # Should have observed_prop_ss and observed_count_ss
-  expect_true("observed_prop_ss" %in% colnames(result))
-  expect_true("observed_count_ss" %in% colnames(result))
+  # Should have pss and k
+  expect_true("pss" %in% colnames(result))
+  expect_true("k" %in% colnames(result))
 
-  # Observed values should be the same regardless of method
+  # P_ss and k should be the same regardless of method
   observed_count_manual <- calculate_observed_significant(df)
-  expect_equal(result$observed_count_ss, observed_count_manual)
-
-  observed_prop_manual <- observed_count_manual / nrow(df)
-  expect_equal(result$observed_prop_ss, observed_prop_manual, tolerance = 1e-6)
+  n_total <- nrow(df)
+  pss_manual <- if (n_total > 0) observed_count_manual / n_total else NA_real_
+  expect_equal(result$pss, pss_manual, tolerance = 1e-6)
+  expect_equal(result$k, n_total)
 })
 
 test_that("get_psb_metaflavours includes expected values for each method", {
@@ -157,13 +159,10 @@ test_that("get_psb_metaflavours includes expected values for each method", {
 
   result <- get_psb_metaflavours(df)
 
-  # Should have expected values for each method
-  expect_true("expected_prop_ss_uwls" %in% colnames(result))
-  expect_true("expected_prop_ss_uwls3" %in% colnames(result))
-  expect_true("expected_prop_ss_hs" %in% colnames(result))
-  expect_true("expected_count_ss_uwls" %in% colnames(result))
-  expect_true("expected_count_ss_uwls3" %in% colnames(result))
-  expect_true("expected_count_ss_hs" %in% colnames(result))
+  # Should have esig values for each method
+  expect_true("esig_uwls" %in% colnames(result))
+  expect_true("esig_uwls3" %in% colnames(result))
+  expect_true("esig_hs" %in% colnames(result))
 })
 
 test_that("get_psb_metaflavours errors on multiple meta-analyses", {
