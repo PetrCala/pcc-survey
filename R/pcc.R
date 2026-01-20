@@ -41,15 +41,41 @@ pcc_se_s1 <- function(df) {
     t_value <- df$t_value
   }
 
-  # Calculate r_p = t / sqrt(t^2 + df)
-  suppressWarnings(
-    r_p <- t_value / sqrt(t_value^2 + df$dof)
-  )
+  # Initialize result vector with NA
+  se_s1 <- rep(NA_real_, nrow(df))
 
-  # Calculate S1 = sqrt((1 - r_p^2) / df)
-  suppressWarnings(
-    se_s1 <- sqrt((1 - r_p^2) / df$dof)
-  )
+  # Identify valid rows: dof must be positive and finite, t_value must be finite
+  valid_rows <- !is.na(t_value) & !is.na(df$dof) & 
+                is.finite(t_value) & is.finite(df$dof) & 
+                df$dof > 0
+
+  if (sum(valid_rows) == 0) {
+    logger::log_warn("No valid observations for S1 calculation (all have invalid dof or t_value)")
+    return(se_s1)
+  }
+
+  # Calculate r_p = t / sqrt(t^2 + df) only for valid rows
+  t_valid <- t_value[valid_rows]
+  dof_valid <- df$dof[valid_rows]
+
+  suppressWarnings({
+    # Check if t^2 + dof is positive (required for sqrt)
+    sqrt_arg <- t_valid^2 + dof_valid
+    sqrt_valid <- sqrt_arg > 0 & is.finite(sqrt_arg)
+    
+    r_p <- rep(NA_real_, length(t_valid))
+    r_p[sqrt_valid] <- t_valid[sqrt_valid] / sqrt(sqrt_arg[sqrt_valid])
+    
+    # Calculate S1 = sqrt((1 - r_p^2) / df) only for valid rows
+    # Check if (1 - r_p^2) / dof is non-negative (required for sqrt)
+    s1_arg <- (1 - r_p^2) / dof_valid
+    s1_valid <- sqrt_valid & !is.na(r_p) & s1_arg >= 0 & is.finite(s1_arg)
+    
+    se_s1_valid <- rep(NA_real_, length(t_valid))
+    se_s1_valid[s1_valid] <- sqrt(s1_arg[s1_valid])
+    
+    se_s1[valid_rows] <- se_s1_valid
+  })
 
   se_s1
 }
@@ -78,15 +104,41 @@ pcc_se_s2 <- function(df) {
     t_value <- df$t_value
   }
 
-  # Calculate r_p = t / sqrt(t^2 + df)
-  suppressWarnings(
-    r_p <- t_value / sqrt(t_value^2 + df$dof)
-  )
+  # Initialize result vector with NA
+  se_s2 <- rep(NA_real_, nrow(df))
 
-  # Calculate S2 = sqrt(((1 - r_p^2)^2) / df) = (1 - r_p^2) / sqrt(df)
-  suppressWarnings(
-    se_s2 <- (1 - r_p^2) / sqrt(df$dof)
-  )
+  # Identify valid rows: dof must be positive and finite, t_value must be finite
+  # S2 requires sqrt(dof), so dof must be > 0
+  valid_rows <- !is.na(t_value) & !is.na(df$dof) & 
+                is.finite(t_value) & is.finite(df$dof) & 
+                df$dof > 0
+
+  if (sum(valid_rows) == 0) {
+    logger::log_warn("No valid observations for S2 calculation (all have invalid dof or t_value)")
+    return(se_s2)
+  }
+
+  # Calculate r_p = t / sqrt(t^2 + df) only for valid rows
+  t_valid <- t_value[valid_rows]
+  dof_valid <- df$dof[valid_rows]
+
+  suppressWarnings({
+    # Check if t^2 + dof is positive (required for sqrt)
+    sqrt_arg <- t_valid^2 + dof_valid
+    sqrt_valid <- sqrt_arg > 0 & is.finite(sqrt_arg)
+    
+    r_p <- rep(NA_real_, length(t_valid))
+    r_p[sqrt_valid] <- t_valid[sqrt_valid] / sqrt(sqrt_arg[sqrt_valid])
+    
+    # Calculate S2 = (1 - r_p^2) / sqrt(df) only for valid rows
+    # dof_valid is already > 0, so sqrt(dof_valid) is valid
+    s2_valid <- sqrt_valid & !is.na(r_p) & is.finite(r_p)
+    
+    se_s2_valid <- rep(NA_real_, length(t_valid))
+    se_s2_valid[s2_valid] <- (1 - r_p[s2_valid]^2) / sqrt(dof_valid[s2_valid])
+    
+    se_s2[valid_rows] <- se_s2_valid
+  })
 
   se_s2
 }
@@ -112,7 +164,25 @@ re <- function(df, effect = NULL, se = NULL, method = "DL") {
         return(list(est = NA, t_value = NA))
       }
 
-      re_data_ <- data.frame(yi = effect, sei = se, study = df$study)
+      # Filter out NA values explicitly (similar to get_re1_tau2)
+      valid_rows <- !is.na(effect) & !is.na(se) & is.finite(effect) & is.finite(se)
+      if (sum(valid_rows) == 0) {
+        logger::log_warn(paste("No valid data to calculate RE for meta-analysis", meta))
+        return(list(est = NA, t_value = NA))
+      }
+
+      # Log number of valid observations used
+      n_valid <- sum(valid_rows)
+      n_total <- length(effect)
+      if (n_valid < n_total) {
+        logger::log_debug(paste("RE calculation for", meta, ": using", n_valid, "out of", n_total, "observations (dropped", n_total - n_valid, "with NA/infinite values)"))
+      }
+
+      re_data_ <- data.frame(
+        yi = effect[valid_rows],
+        sei = se[valid_rows],
+        study = df$study[valid_rows]
+      )
 
       suppressWarnings( # Sometimes the variances are large
         re_ <- metafor::rma(
@@ -152,10 +222,39 @@ uwls <- function(df, effect = NULL, se = NULL) {
 
   meta <- unique(df$meta)
 
+  # Filter out NA and invalid values explicitly
+  # Check for NA/infinite in effect and se, and also check for zero se (would cause division issues)
+  valid_rows <- !is.na(effect) & !is.na(se) & is.finite(effect) & is.finite(se) & se > 0
+  if (sum(valid_rows) == 0) {
+    logger::log_warn(paste("No valid data to calculate UWLS for meta-analysis", meta))
+    return(list(est = NA, t_value = NA))
+  }
+
+  # Log number of valid observations used
+  n_valid <- sum(valid_rows)
+  n_total <- length(effect)
+  if (n_valid < n_total) {
+    logger::log_debug(paste("UWLS calculation for", meta, ": using", n_valid, "out of", n_total, "observations (dropped", n_total - n_valid, "with NA/infinite/zero SE values)"))
+  }
+
+  # Calculate t and precision only for valid rows
+  effect_valid <- effect[valid_rows]
+  se_valid <- se[valid_rows]
+
   df_model <- data.frame(
-    t = effect / se,
-    precision = 1 / se
+    t = effect_valid / se_valid,
+    precision = 1 / se_valid
   )
+
+  # Additional check: filter out any remaining NA/Infinite values from division
+  valid_model_rows <- !is.na(df_model$t) & !is.na(df_model$precision) & 
+                      is.finite(df_model$t) & is.finite(df_model$precision)
+  if (sum(valid_model_rows) == 0) {
+    logger::log_warn(paste("No valid data after calculating t and precision for UWLS in meta-analysis", meta))
+    return(list(est = NA, t_value = NA))
+  }
+
+  df_model <- df_model[valid_model_rows, ]
 
   result <- tryCatch(
     {

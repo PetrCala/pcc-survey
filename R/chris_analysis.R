@@ -23,6 +23,22 @@ get_chris_metaflavours <- function(df, re_method = "ML", re_method_fishers_z = "
   se_s1 <- pcc_se_s1(df)
   se_s2 <- pcc_se_s2(df)
 
+  # Log number of valid observations for S1 and S2
+  n_valid_s1 <- sum(!is.na(se_s1) & !is.na(df$effect))
+  n_valid_s2 <- sum(!is.na(se_s2) & !is.na(df$effect))
+  n_total <- nrow(df)
+  
+  logger::log_debug(paste("S1 valid observations:", n_valid_s1, "out of", n_total, 
+                          sprintf("(%.1f%%)", 100 * n_valid_s1 / n_total)))
+  logger::log_debug(paste("S2 valid observations:", n_valid_s2, "out of", n_total, 
+                          sprintf("(%.1f%%)", 100 * n_valid_s2 / n_total)))
+  
+  if (n_valid_s1 != n_valid_s2) {
+    logger::log_info(paste("Warning: S1 and S2 have different numbers of valid observations for", meta, 
+                          "- S1:", n_valid_s1, "vs S2:", n_valid_s2, 
+                          "- This may cause RE1/RE2 and UWLS1/UWLS2 to use different sample sizes"))
+  }
+
   # Define the various methods to calculate the PCC
   # RE1/RE2 and UWLS1/UWLS2 use S1/S2 SE formulas
   methods <- list(
