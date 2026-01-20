@@ -58,6 +58,16 @@ get_chris_metaflavours <- function(df, re_method = "ML", re_method_fishers_z = "
     results[[paste0(method, "_t_value")]] <- res$t_value
   }
 
+  # Calculate row_mean: simple unadjusted average of all estimator columns
+  estimator_cols <- paste0(names(methods), "_est")
+  estimator_values <- vapply(estimator_cols, function(col) results[[col]], FUN.VALUE = numeric(1))
+  estimator_values_valid <- estimator_values[!is.na(estimator_values)]
+  if (length(estimator_values_valid) > 0) {
+    results$row_mean <- mean(estimator_values_valid)
+  } else {
+    results$row_mean <- NA_real_
+  }
+
   sum_stats <- pcc_sum_stats(df, log_results = FALSE)
 
   results <- c(results, sum_stats)
