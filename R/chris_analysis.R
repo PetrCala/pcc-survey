@@ -146,15 +146,6 @@ chris_analyse <- function(config, data_dir = "data") {
   pcc_list <- get_flavours()
   pcc_df_out <- do.call(rbind, pcc_list)
 
-  # Add a row for the full data frame
-  pcc_df$meta <- "All meta-analyses"
-  pcc_full_df <- get_chris_metaflavours(
-    pcc_df,
-    re_method = config$methods$re_method,
-    re_method_fishers_z = config$methods$re_method_fishers_z
-  )
-  pcc_df_out <- rbind(pcc_df_out, pcc_full_df)
-
   # Add an index
   if (config$analysis$add_idx_column) {
     idx <- seq_len(nrow(pcc_df_out))
