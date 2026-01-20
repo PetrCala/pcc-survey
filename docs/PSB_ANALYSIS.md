@@ -12,20 +12,22 @@ The PSB analysis calculates several measures to assess whether there is an exces
 
 E_sig is calculated using a **one-sided** test that includes random heterogeneity from RE1's estimate of τ². This is not a simple power calculation, but rather accounts for the heterogeneity variance in the meta-analysis.
 
-For each study *i* with standard error *SE`<sub>`i`</sub>`*, mean effect estimate *|UWLS|* (absolute value of the method's estimate), and heterogeneity variance *τ²* from RE1:
+For each study *i* with standard error *SE`<sub>`i`</sub>`*, mean effect estimate *UWLS* (from the method's estimate), and heterogeneity variance *τ²* from RE1:
 
 **Z-score for each study:**
 
 ```
-Z_i = (z_α * SE_i - |UWLS|) / √(SE_i² + τ²)
+Z_i = (z_α * SE_i - UWLS) / √(SE_i² + τ²)
 ```
 
 where:
 
 - *SE_i* = standard error for study *i*
-- *|UWLS|* = absolute value of the mean effect estimate (from UWLS, UWLS+3, or HS method)
+- *UWLS* = the mean effect estimate (from UWLS, UWLS+3, or HS method)
 - *τ²* = heterogeneity variance from RE1's estimate (using S1 standard errors)
 - *z_α* = critical value for one-sided test (e.g., for α = 0.05, z_α = 1.645)
+
+**Note:** Inverse relationships have already been converted (multiplied by -1) in the data processing step, so the absolute value is not needed.
 
 **Expected significance probability for each study:**
 
@@ -88,7 +90,7 @@ The PSB measures are calculated using three different mean effect estimates:
 **Important:**
 
 - All methods use the same **τ² (heterogeneity variance)** from **RE1's estimate** (calculated using S1 standard errors with the random effects method specified, default "ML").
-- Each method uses its own mean effect estimate in the E_sig calculation (the absolute value of the estimate is used in the formula).
+- Each method uses its own mean effect estimate in the E_sig calculation (no absolute value needed since inverse relationships are already converted).
 - This allows comparison of how different estimation methods affect the bias measures, which is the core focus of this survey paper.
 
 The E_sig calculation is **one-sided** (not two-sided) and includes the heterogeneity variance τ² in the denominator: √(SE_i² + τ²), which accounts for random heterogeneity in the meta-analysis.

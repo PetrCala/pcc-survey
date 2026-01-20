@@ -68,11 +68,14 @@ get_re1_tau2 <- function(df, re_method = "ML") {
 #' Calculate E_sigi for each study using one-sided test with heterogeneity
 #'
 #' Calculates the expected probability of statistical significance for each study
-#' using the formula: Z_i = (1.96 * SE_i - |UWLS|) / sqrt(SE_i^2 + tau^2)
+#' using the formula: Z_i = (1.96 * SE_i - UWLS) / sqrt(SE_i^2 + tau^2)
 #' and E_sigi = 1 - N(Z_i), where N is the cumulative normal distribution.
 #'
 #' This is a one-sided calculation that includes random heterogeneity from RE1's
 #' estimate of tau^2.
+#'
+#' Note: Inverse relationships have already been converted (multiplied by -1),
+#' so the absolute value is not needed.
 #'
 #' @param df [data.frame] The data frame with 'se' column
 #' @param uwls_estimate [numeric] The UWLS estimate (mean effect)
@@ -92,8 +95,9 @@ calculate_esigi <- function(df, uwls_estimate, tau2, se = NULL, alpha = 0.05) {
   critical_value <- stats::qnorm(1 - alpha)
 
   # Calculate Z_i for each study
-  # Z_i = (1.96 * SE_i - |UWLS|) / sqrt(SE_i^2 + tau2)
-  numerator <- critical_value * se - abs(uwls_estimate)
+  # Z_i = (1.96 * SE_i - UWLS) / sqrt(SE_i^2 + tau2)
+  # Note: No absolute value needed since inverse relationships are already converted
+  numerator <- critical_value * se - uwls_estimate
   denominator <- sqrt(se^2 + tau2)
 
   # Handle division by zero or negative denominator
@@ -152,7 +156,8 @@ calculate_study_power <- function(df, mean_effect, se = NULL, alpha = 0.05) {
 #'
 #' Uses one-sided calculation with heterogeneity variance (tau^2) from RE1.
 #' E_sig = (sum(E_sigi)) / k, where E_sigi = 1 - N(Z_i) and
-#' Z_i = (1.96 * SE_i - |UWLS|) / sqrt(SE_i^2 + tau^2)
+#' Z_i = (1.96 * SE_i - UWLS) / sqrt(SE_i^2 + tau^2)
+#' Note: No absolute value needed since inverse relationships are already converted.
 #'
 #' @param df [data.frame] The data frame with 'effect' and 'se' columns
 #' @param uwls_estimate [numeric] The UWLS estimate (mean effect)
@@ -304,7 +309,7 @@ get_psb_metaflavours <- function(df, re_method = "ML", alpha = 0.05) {
     uwls_estimate <- method_result$est
 
     # Use UWLS estimate for all methods (as specified in the formula)
-    # The formula uses |UWLS| regardless of which method's estimate we're evaluating
+    # Note: No absolute value needed since inverse relationships are already converted
     psb_measures <- calculate_psb_measures(df, method_name, uwls_estimate, tau2, alpha)
 
     # Add all measures with method prefix (all as proportions)
