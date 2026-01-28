@@ -276,25 +276,42 @@ uwls <- function(df, effect = NULL, se = NULL) {
 
 #' Calculate UWLS+3
 #'
-#' @param df [data.frame] The data frame to calculate the UWLS+3 with
+#' @param df [data.frame] The data frame to calculate the UWLS+3 with. Requires 'dof' column
+#'   to be pre-filled (e.g., via fill_dof_using_pcc in the data processing pipeline).
 #' @return [list] A list with properties "est", "t_value".
 #' @export
 uwls3 <- function(df) {
   meta <- unique(df$meta)
 
-  # Prefer DoF when present; when missing, follow project convention and impute
-  # as sample_size - 7.
-  dof_ <- get_dof_or_sample_size(df, target = "dof", offset = 0)
+  # Use dof directly from the data frame (should be pre-filled by the pipeline)
+  dof_ <- df$dof
 
   t_ <- df$effect / df$se
 
-  pcc3 <- t_ / sqrt(t_^2 + dof_ + 3) # dof_ + 3 ~~ sample_size - 7 + 3
+  # Filter to valid rows where dof is available and positive
+  valid_rows <- !is.na(dof_) & is.finite(dof_) & dof_ > 0 &
+                !is.na(t_) & is.finite(t_)
+
+  if (sum(valid_rows) == 0) {
+    logger::log_warn(paste("No valid data to calculate UWLS+3 for meta-analysis", meta))
+    return(list(est = NA, t_value = NA))
+  }
+
+  dof_valid <- dof_[valid_rows]
+  t_valid <- t_[valid_rows]
+
+  pcc3 <- t_valid / sqrt(t_valid^2 + dof_valid + 3)
 
   # Use the standard error reported in the data frame (not calculated from variance)
-  se3 <- df$se
+  se3 <- df$se[valid_rows]
 
   # Drop observations where either the PCC3 or SE3 are missing
-  uwls3_data <- data.frame(effect = pcc3, se = se3, meta = df$meta, study = df$study)
+  uwls3_data <- data.frame(
+    effect = pcc3,
+    se = se3,
+    meta = df$meta[valid_rows],
+    study = df$study[valid_rows]
+  )
   uwls3_data <- uwls3_data[!is.na(pcc3) & !is.na(se3), ] # Drop NA rows
 
   if (nrow(uwls3_data) == 0) {
