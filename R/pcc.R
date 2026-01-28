@@ -148,9 +148,9 @@ pcc_se_s2 <- function(df) {
 #' @param df [data.frame] The data frame to calculate the RE with
 #' @param effect [vector] The vector of effects. If not provided, defaults to df$effect.
 #' @param se [vector] The vector of SEs. If not provided, defaults to df$se.
-#' @param method [character] The method to use for the RE calculation. Defaults to "DL". Other common options include "ML" and "REML".
+#' @param method [character] The method to use for the RE calculation. Defaults to "ML". Other common options include "ML" and "REML".
 #' @export
-re <- function(df, effect = NULL, se = NULL, method = "DL") {
+re <- function(df, effect = NULL, se = NULL, method = "ML") {
   if (is.null(effect)) effect <- df$effect
   if (is.null(se)) se <- df$se
   stopifnot(length(effect) == nrow(df), length(se) == nrow(df))
