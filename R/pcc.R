@@ -40,8 +40,8 @@ pcc_se_s1 <- function(df) {
 
 #' Calculate PCC standard error using S2 formula
 #'
-#' S2 = (1 - r_p^2) / sqrt(df)
-#' where r_p = t / sqrt(t^2 + df)
+#' S2 variance = (1 - r_p^2)^2 / dof; S2 SE = sqrt(variance).
+#' Here r_p = t / sqrt(t^2 + dof).
 #'
 #' Assumes all inputs are valid (t_value finite, dof > 0). Use
 #' validate_pcc_observations() to ensure this before calling.
@@ -56,7 +56,7 @@ pcc_se_s2 <- function(df) {
   stopifnot(all(!is.na(df$dof) & is.finite(df$dof) & df$dof > 0))
 
   r_p <- df$t_value / sqrt(df$t_value^2 + df$dof)
-  (1 - r_p^2) / sqrt(df$dof)
+  sqrt((1 - r_p^2)^2 / df$dof)
 }
 
 #' Calculate random effects

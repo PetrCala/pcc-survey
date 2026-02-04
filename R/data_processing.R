@@ -489,8 +489,8 @@ compute_derived_quantities <- function(df) {
   # S1 SE = sqrt((1 - r_p^2) / dof)
   df$se_s1 <- sqrt((1 - r_p^2) / df$dof)
 
-  # S2 SE = (1 - r_p^2) / sqrt(dof)
-  df$se_s2 <- (1 - r_p^2) / sqrt(df$dof)
+  # S2 variance = (1 - r_p^2)^2 / dof; S2 SE = sqrt(variance)
+  df$se_s2 <- sqrt((1 - r_p^2)^2 / df$dof)
 
   # Fisher's Z = 0.5 * log((1 + r) / (1 - r))
   df$fishers_z <- 0.5 * log((1 + df$effect) / (1 - df$effect))
