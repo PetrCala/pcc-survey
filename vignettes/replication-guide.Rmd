@@ -217,7 +217,7 @@ run_chris_analysis(use_sample = TRUE)
 renv::restore()
 
 # Or install missing packages manually
-install.packages(c("MAIVE", "metafor", "data.table", ...))
+install.packages(c("metafor", "data.table", ...))
 ```
 
 ### Configuration Issues
@@ -293,5 +293,4 @@ filtering:
 
 For more information about the methods used:
 
-- MAIVE: Irsova et al. (2025) - Meta-Analysis Instrumental Variable Estimator
 - Meta-analysis methods: See package documentation for individual functions

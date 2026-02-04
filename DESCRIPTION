@@ -15,7 +15,6 @@ Imports:
     data.table,
     digest,
     logger,
-    MAIVE,
     memoise,
     metafor,
     readxl,

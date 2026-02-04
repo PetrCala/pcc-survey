@@ -108,45 +108,6 @@
       "Maintainer": "Achim Zeileis <Achim.Zeileis@R-project.org>",
       "Repository": "CRAN"
     },
-    "MAIVE": {
-      "Package": "MAIVE",
-      "Version": "0.2.2",
-      "Source": "GitHub",
-      "Type": "Package",
-      "Title": "Meta Analysis Instrumental Variable Estimator",
-      "Encoding": "UTF-8",
-      "RoxygenNote": "7.3.3",
-      "URL": "https://meta-analysis.cz/maive/, https://github.com/meta-analysis-es/maive",
-      "BugReports": "https://github.com/meta-analysis-es/maive/issues",
-      "Authors@R": "c( person(given = \"Zuzana\", family = \"Irsova\", role = \"aut\", comment = c(affiliation = \"Charles University, Prague\")), person(given = \"Pedro R. D.\", family = \"Bom\", role = \"aut\", comment = c(affiliation = \"University of Deusto, Bilbao\")), person(given = \"Tomas\", family = \"Havranek\", role = \"aut\", comment = c(affiliation = \"Charles University, Prague; CEPR, London; METRICS, Stanford\")), person(given = \"Heiko\", family = \"Rachinger\", role = c(\"aut\"), comment = c(affiliation = \"University of the Balearic Islands, Palma\")), person(given = \"Petr\", family = \"Cala\", email = \"cala.p@seznam.cz\", role = c(\"aut\", \"cre\"), comment = c(affiliation = \"Charles University, Prague\")) )",
-      "Description": "Meta-analysis traditionally assigns more weight to studies with lower standard errors, assuming higher precision. However, in observational research, precision must be estimated and is vulnerable to manipulation, such as p-hacking, to achieve statistical significance. This can lead to spurious precision, invalidating inverse-variance weighting and bias-correction methods like funnel plots. Common methods for addressing publication bias, including selection models, often fail or exacerbate the problem. This package introduces an instrumental variable approach to limit bias caused by spurious precision in meta-analysis. Methods are described in 'Irsova et al.' (2025) <doi:10.1038/s41467-025-63261-0>.",
-      "License": "MIT + file LICENSE",
-      "Depends": [
-        "R (>= 4.0.0)"
-      ],
-      "Imports": [
-        "stats",
-        "cli",
-        "clubSandwich"
-      ],
-      "Suggests": [
-        "testthat",
-        "knitr",
-        "rmarkdown",
-        "varhandle"
-      ],
-      "VignetteBuilder": "knitr",
-      "RemoteType": "github",
-      "RemoteHost": "api.github.com",
-      "RemoteRepo": "MAIVE",
-      "RemoteUsername": "PetrCala",
-      "RemotePkgRef": "PetrCala/MAIVE@v0.2.2",
-      "RemoteRef": "v0.2.2",
-      "RemoteSha": "b6f5cf951da8beef80a2be209cbe1817a00f3377",
-      "NeedsCompilation": "no",
-      "Author": "Zuzana Irsova [aut] (affiliation: Charles University, Prague), Pedro R. D. Bom [aut] (affiliation: University of Deusto, Bilbao), Tomas Havranek [aut] (affiliation: Charles University, Prague; CEPR, London; METRICS, Stanford), Heiko Rachinger [aut] (affiliation: University of the Balearic Islands, Palma), Petr Cala [aut, cre] (affiliation: Charles University, Prague)",
-      "Maintainer": "Petr Cala <cala.p@seznam.cz>"
-    },
     "MASS": {
       "Package": "MASS",
       "Version": "7.3-65",

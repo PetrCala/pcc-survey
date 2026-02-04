@@ -138,7 +138,6 @@ Three options (pick one):
 
 All dependencies are managed via `renv` and listed in `renv.lock`. Key packages:
 
-- `MAIVE` (from CRAN)
 - `metafor`
 - `data.table`
 - `readxl`
@@ -452,6 +451,5 @@ Petr Čala - <cala.p@seznam.cz>
 
 This package uses the following key dependencies:
 
-- `MAIVE` - Meta-Analysis Instrumental Variable Estimator
 - `metafor` - Meta-Analysis Package for R
 - And others (see `DESCRIPTION`)
