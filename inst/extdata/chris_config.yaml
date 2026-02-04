@@ -51,7 +51,7 @@ logging:
 
 # Caching
 caching:
-  use_cache: true  # Enable function result caching
+  use_cache: false  # Enable function result caching
   cache_age: 3600  # Cache age in seconds (1 hour)
   add_fn_name_to_cache_keys: true  # Include function name in cache keys
 

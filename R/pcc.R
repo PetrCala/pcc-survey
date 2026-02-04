@@ -1,22 +1,3 @@
-#' Calculate the PCC variance.
-#'
-#' @param df [data.frame] The data frame upon which to calculate the PCC vairance. Should include the columns 'effect', 'sample_size', 'dof'
-#' @param offset [numeric] An offset value to subtract from the degrees of freedom
-#'  in case they are missing.
-#' @return [vector] A vector of PCC variances.
-#' @export
-pcc_variance <- function(df, offset) {
-  stopifnot(sum(is.na(df$dof)) == 0)
-
-  pcc_ <- df$effect
-
-  numerator <- (1 - pcc_^2)^2
-  denominator <- df$dof - offset
-
-  variance <- numerator / denominator
-  variance
-}
-
 #' Calculate PCC standard error using S1 formula
 #'
 #' S1 = sqrt((1 - r_p^2) / df)
