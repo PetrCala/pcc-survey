@@ -76,6 +76,9 @@ run_psb_analysis <- function(config_path = NULL, alpha = 0.05) {
     pcc_df <- convert_inverse_relationships(pcc_df, log_results = TRUE)
   }
 
+  # Compute all derived quantities (S1/S2 SE, Fisher's Z, PCC3, etc.)
+  pcc_df <- compute_derived_quantities(pcc_df)
+
   # Calculate PSB measures for each meta-analysis
   logger::log_info("Calculating PSB measures for each meta-analysis...")
   psb_list <- lapply(split(pcc_df, pcc_df$meta), function(meta_df) {

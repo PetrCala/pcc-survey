@@ -15,37 +15,20 @@ get_chris_metaflavours <- function(df, re_method = "ML", re_method_fishers_z = "
     cli::cli_abort("Expected exactly one unique meta-analysis name")
   }
 
-  logger::log_debug(paste("Calculating PCC statistics for", meta))
+  logger::log_debug(paste("Calculating PCC statistics for", meta, "-", nrow(df), "observations"))
 
   results <- list(meta = as.character(meta))
 
-  # Calculate S1 and S2 standard errors
-  se_s1 <- pcc_se_s1(df)
-  se_s2 <- pcc_se_s2(df)
-
-  # Log number of valid observations for S1 and S2
-  n_valid_s1 <- sum(!is.na(se_s1) & !is.na(df$effect))
-  n_valid_s2 <- sum(!is.na(se_s2) & !is.na(df$effect))
-  n_total <- nrow(df)
-  
-  logger::log_debug(paste("S1 valid observations:", n_valid_s1, "out of", n_total, 
-                          sprintf("(%.1f%%)", 100 * n_valid_s1 / n_total)))
-  logger::log_debug(paste("S2 valid observations:", n_valid_s2, "out of", n_total, 
-                          sprintf("(%.1f%%)", 100 * n_valid_s2 / n_total)))
-  
-  if (n_valid_s1 != n_valid_s2) {
-    logger::log_info(paste("Warning: S1 and S2 have different numbers of valid observations for", meta, 
-                          "- S1:", n_valid_s1, "vs S2:", n_valid_s2, 
-                          "- This may cause RE1/RE2 and UWLS1/UWLS2 to use different sample sizes"))
-  }
+  # Use pre-computed S1 and S2 standard errors from compute_derived_quantities()
+  stopifnot("se_s1" %in% colnames(df))
+  stopifnot("se_s2" %in% colnames(df))
 
   # Define the various methods to calculate the PCC
-  # RE1/RE2 and UWLS1/UWLS2 use S1/S2 SE formulas
   methods <- list(
-    re1 = re(df, se = se_s1, method = re_method),
-    re2 = re(df, se = se_s2, method = re_method),
-    uwls1 = uwls(df, se = se_s1),
-    uwls2 = uwls(df, se = se_s2),
+    re1 = re(df, se = df$se_s1, method = re_method),
+    re2 = re(df, se = df$se_s2, method = re_method),
+    uwls1 = uwls(df, se = df$se_s1),
+    uwls2 = uwls(df, se = df$se_s2),
     uwls3 = uwls3(df),
     hsma = hsma(df),
     fishers_z = fishers_z(df, method = re_method_fishers_z),
@@ -61,19 +44,11 @@ get_chris_metaflavours <- function(df, re_method = "ML", re_method_fishers_z = "
   # Calculate row_mean: simple unadjusted average of all estimator columns
   estimator_cols <- paste0(names(methods), "_est")
   estimator_values <- vapply(estimator_cols, function(col) results[[col]], FUN.VALUE = numeric(1))
-  estimator_values_valid <- estimator_values[!is.na(estimator_values)]
-  if (length(estimator_values_valid) > 0) {
-    results$row_mean <- mean(estimator_values_valid)
-  } else {
-    results$row_mean <- NA_real_
-  }
+  stopifnot(all(!is.na(estimator_values)))
+  results$row_mean <- mean(estimator_values)
 
   sum_stats <- pcc_sum_stats(df, log_results = FALSE)
-
   results <- c(results, sum_stats)
-
-  # Some elements might be numeric(0) here - replace with NA to allow for data frame conversion
-  results <- lapply(results, function(x) if (length(x) == 0) NA else x)
 
   as.data.frame(results)
 }
@@ -130,6 +105,9 @@ chris_analyse <- function(config, data_dir = "data") {
   if (is.null(config$cleaning$convert_inverse_relationships) || config$cleaning$convert_inverse_relationships) {
     pcc_df <- convert_inverse_relationships(pcc_df, log_results = TRUE)
   }
+
+  # Compute all derived quantities (S1/S2 SE, Fisher's Z, PCC3, etc.)
+  pcc_df <- compute_derived_quantities(pcc_df)
 
   # Calculate flavours for each meta-analysis
   get_flavours <- function() {

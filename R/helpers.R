@@ -10,6 +10,12 @@ assert_required_cols <- function(df, cols) {
 
 #' Get DOF or sample size, using the other as substitute when missing
 #'
+#' @description
+#' `r lifecycle::badge("deprecated")`
+#'
+#' This function is deprecated. Use `compute_sample_size()` in the preprocessing
+#' pipeline instead. After preprocessing, `df$sample_size` is always available.
+#'
 #' @param df [data.frame] The data frame with sample_size and dof columns
 #' @param target [character] What to return: "dof" or "sample_size" (default: "dof")
 #' @param offset [numeric] Offset to apply when returning DOF (default: 0)
@@ -26,7 +32,6 @@ get_dof_or_sample_size <- function(df,
   assert_required_cols(df, c("dof", "sample_size"))
 
   if (target == "dof") {
-    # Return DOF: use sample_size - 7 when DOF is missing
     dof <- df$dof
     missing_dof <- is.na(dof)
     if (any(missing_dof)) {
@@ -34,15 +39,12 @@ get_dof_or_sample_size <- function(df,
     }
     return(dof - offset)
   } else {
-    # Return sample_size: use DOF (directly or +7) when sample_size is missing
     n_ <- df$sample_size
     missing_n <- is.na(n_)
     if (any(missing_n)) {
       if (use_dof_directly) {
-        # Use DOF directly as n (for HSMA, Fisher's z)
         n_[missing_n] <- df$dof[missing_n]
       } else {
-        # Estimate sample size as dof + 7 (for summary statistics)
         n_[missing_n] <- df$dof[missing_n] + 7
       }
     }

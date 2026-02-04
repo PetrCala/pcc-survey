@@ -36,10 +36,7 @@ cleaning:
   fill_dof: true  # Fill missing degrees of freedom
   convert_inverse_relationships: true  # Convert negative mean PCCs to positive for comparability
   fill_dof_conditions:
-    replace_existing: true  # Replace existing DOF values
-    drop_missing: false  # Drop rows with missing DOF after filling
-    drop_negative: false  # Drop rows with negative DOF
-    drop_zero: false  # Drop rows with zero DOF
+    replace_existing: true  # Replace existing DOF values with recalculated ones
 
 # Filtering
 filtering:

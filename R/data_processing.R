@@ -112,15 +112,16 @@ fill_missing_values <- function(df, target_col, columns = c(), missing_value_pre
 
 #' Fill missing degrees of freedom based on t-values and PCCs
 #'
+#' Fills DOF values using the formula: dof = t^2 * (1/pcc^2 - 1).
+#' Validation of the resulting values (dropping negative, zero, NA, etc.)
+#' is handled separately by validate_pcc_observations().
+#'
 #' @note Only use this function for interpolating missing degrees of freedom of PCC-type effects.
 #' @param df [data.frame] The input data frame
 #' @param replace_existing [logical] Whether to replace existing degrees of freedom
-#' @param drop_missing [logical] Whether to drop rows with missing degrees of freedom
-#' @param drop_negative [logical] Whether to drop rows with negative degrees of freedom
-#' @param drop_zero [logical] Whether to drop rows with zero degrees of freedom
 #' @return [data.frame] The modified data frame
 #' @export
-fill_dof_using_pcc <- function(df, replace_existing = FALSE, drop_missing = FALSE, drop_negative = FALSE, drop_zero = FALSE) {
+fill_dof_using_pcc <- function(df, replace_existing = FALSE) {
   validate_columns(df, c("effect", "se", "t_value", "dof"))
 
   pcc <- df$effect
@@ -141,30 +142,7 @@ fill_dof_using_pcc <- function(df, replace_existing = FALSE, drop_missing = FALS
     t_value = t_values[fillable_rows],
     pcc = pcc[fillable_rows]
   )
-  logger::log_info(paste("Filled", sum(fillable_rows), "missing degrees of freedom."))
-
-  # Helper function to drop rows based on a condition
-  drop_rows <- function(condition, message) {
-    n_rows_to_drop <- sum(condition)
-    if (n_rows_to_drop > 0) {
-      logger::log_info(paste("Dropping", n_rows_to_drop, message))
-      df[!condition, ]
-    } else {
-      df
-    }
-  }
-
-  if (drop_missing) {
-    df <- drop_rows(is.na(df$dof), "rows with missing degrees of freedom.")
-  }
-
-  if (drop_negative) {
-    df <- drop_rows(df$dof < 0, "rows with negative degrees of freedom.")
-  }
-
-  if (drop_zero) {
-    df <- drop_rows(df$dof == 0, "rows with zero degrees of freedom.")
-  }
+  logger::log_info(paste("Filled", sum(fillable_rows), "degrees of freedom."))
 
   df
 }
@@ -321,65 +299,21 @@ get_pcc_data <- function(df, pcc_identifier = "correlation", fill_dof = TRUE, fi
   logger::log_info("Loaded ", nrow_pcc, " PCC studies out of ", nrow_full, " rows. (", to_perc(nrow_pcc / nrow_full), " of the clean dataset)")
 
   if (fill_dof) {
-    if (is.null(fill_dof_conditions)) {
-      conditions <- list(
-        replace_existing = FALSE,
-        drop_missing = FALSE,
-        drop_negative = FALSE,
-        drop_zero = FALSE
-      )
-    } else {
-      conditions <- fill_dof_conditions
+    replace_existing <- FALSE
+    if (!is.null(fill_dof_conditions)) {
+      replace_existing <- fill_dof_conditions$replace_existing %||% FALSE
     }
     df <- fill_dof_using_pcc(
       df = df,
-      replace_existing = conditions$replace_existing,
-      drop_missing = conditions$drop_missing,
-      drop_negative = conditions$drop_negative,
-      drop_zero = conditions$drop_zero
+      replace_existing = replace_existing
     )
   }
 
-  # Drop rows with missing DOF before calculating variance (pcc_variance requires no NA in dof)
-  n_rows_before_dof_drop <- nrow(df)
-  missing_dof_rows <- is.na(df$dof)
-  if (sum(missing_dof_rows) > 0) {
-    logger::log_info(paste("Dropping", sum(missing_dof_rows), "rows with missing degrees of freedom before calculating PCC variance."))
-    df <- df[!missing_dof_rows, ]
-  }
+  # Pre-compute sample_size where missing (using dof + 7)
+  df <- compute_sample_size(df)
 
-  # Calculate the PCC variance
-  validate_columns(df, c("dof", "effect"))
-  df$pcc_var <- pcc_variance(df = df, offset = 0)
-
-  # Drop observations for which variance could not be calculated or is infinite
-  n_rows_before <- nrow(df)
-  drop_pcc_rows <- function(df_, condition_vector, reason) {
-    if (any(condition_vector)) {
-      logger::log_warn(paste("Identified", sum(condition_vector), "rows for which PCC variance", reason, "Dropping these rows..."))
-      df_[!condition_vector, ]
-    } else {
-      df_
-    }
-  }
-
-  na_rows <- is.na(df$pcc_var)
-  df <- drop_pcc_rows(df, na_rows, "could not be calculated.")
-
-  inf_rows <- is.infinite(df$pcc_var)
-  df <- drop_pcc_rows(df, inf_rows, "was infinite.")
-
-  # Check that the rows were dropped correctly
-  n_rows_after <- nrow(df)
-  should_have_dropped <- sum(na_rows) + sum(inf_rows)
-  if (n_rows_after + should_have_dropped != n_rows_before) {
-    cli::cli_abort(c(
-      "Something went wrong when dropping missing PCC variance rows.",
-      "Nrows before: {n_rows_before}",
-      "Nrows after: {n_rows_after}",
-      "Should have dropped: {should_have_dropped}"
-    ))
-  }
+  # Apply universal validation filter
+  df <- validate_pcc_observations(df)
 
   df
 }
@@ -448,4 +382,139 @@ convert_inverse_relationships <- function(df, log_results = TRUE) {
   }
 
   result_df
+}
+
+#' Pre-compute sample_size from DOF where missing
+#'
+#' Sets sample_size = dof + 7 for any row where sample_size is NA.
+#' This creates a single definitive sample_size column for all downstream methods.
+#'
+#' @param df [data.frame] Data frame with 'sample_size' and 'dof' columns
+#' @return [data.frame] Data frame with filled sample_size column
+#' @export
+compute_sample_size <- function(df) {
+  validate_columns(df, c("sample_size", "dof"))
+
+  missing_ss <- is.na(df$sample_size)
+  if (any(missing_ss)) {
+    df$sample_size[missing_ss] <- df$dof[missing_ss] + 7
+    logger::log_info(paste("Filled", sum(missing_ss), "missing sample_size values using dof + 7"))
+  }
+
+  df
+}
+
+#' Validate PCC observations for all downstream methods
+#'
+#' Applies the strictest union of validity conditions across all methods,
+#' ensuring every retained observation can be used by every method.
+#' Logs a detailed breakdown of how many rows fail each condition.
+#'
+#' @param df [data.frame] PCC data frame with columns: effect, se, t_value, dof, sample_size
+#' @return [data.frame] Filtered data frame with only universally valid observations
+#' @export
+validate_pcc_observations <- function(df) {
+  validate_columns(df, c("effect", "se", "t_value", "dof", "sample_size"))
+
+  n_before <- nrow(df)
+
+  # Individual condition checks (for logging)
+  conditions <- list(
+    "effect is NA"           = is.na(df$effect),
+    "effect is not finite"   = !is.na(df$effect) & !is.finite(df$effect),
+    "|effect| >= 1"          = !is.na(df$effect) & abs(df$effect) >= 1,
+    "se is NA"               = is.na(df$se),
+    "se is not finite"       = !is.na(df$se) & !is.finite(df$se),
+    "se <= 0"                = !is.na(df$se) & is.finite(df$se) & df$se <= 0,
+    "t_value is NA"          = is.na(df$t_value),
+    "t_value is not finite"  = !is.na(df$t_value) & !is.finite(df$t_value),
+    "dof is NA"              = is.na(df$dof),
+    "dof is not finite"      = !is.na(df$dof) & !is.finite(df$dof),
+    "dof <= 0"               = !is.na(df$dof) & is.finite(df$dof) & df$dof <= 0,
+    "sample_size is NA"      = is.na(df$sample_size),
+    "sample_size not finite" = !is.na(df$sample_size) & !is.finite(df$sample_size),
+    "sample_size <= 3"       = !is.na(df$sample_size) & is.finite(df$sample_size) & df$sample_size <= 3
+  )
+
+  for (name in names(conditions)) {
+    n_fail <- sum(conditions[[name]])
+    if (n_fail > 0) {
+      logger::log_info(paste("Validation:", n_fail, "rows fail condition:", name))
+    }
+  }
+
+  # Combined universal validity mask
+  valid <- !is.na(df$effect) & is.finite(df$effect) & abs(df$effect) < 1 &
+           !is.na(df$se) & is.finite(df$se) & df$se > 0 &
+           !is.na(df$t_value) & is.finite(df$t_value) &
+           !is.na(df$dof) & is.finite(df$dof) & df$dof > 0 &
+           !is.na(df$sample_size) & is.finite(df$sample_size) & df$sample_size > 3
+
+  df <- df[valid, ]
+  n_after <- nrow(df)
+  n_dropped <- n_before - n_after
+
+  logger::log_info(paste("Universal validation: dropped", n_dropped, "of", n_before,
+                         "rows.", n_after, "rows remain."))
+
+  if (n_after == 0) {
+    cli::cli_abort("No valid observations remain after universal validation.")
+  }
+
+  df
+}
+
+#' Compute all derived quantities needed by the 8 methods
+#'
+#' Assumes the data has already passed validate_pcc_observations() and
+#' convert_inverse_relationships(). Adds columns: pcc_var, se_s1, se_s2,
+#' fishers_z, fishers_z_se, pcc3.
+#'
+#' All derived quantities are mathematically guaranteed to be finite when the
+#' universal validity conditions hold (effect finite with |effect| < 1, se > 0,
+#' dof > 0, sample_size > 3, t_value finite).
+#'
+#' @param df [data.frame] Validated PCC data frame
+#' @return [data.frame] Data frame with derived quantity columns added
+#' @export
+compute_derived_quantities <- function(df) {
+  validate_columns(df, c("effect", "se", "t_value", "dof", "sample_size"))
+
+  # PCC variance = (1 - effect^2)^2 / dof
+  df$pcc_var <- (1 - df$effect^2)^2 / df$dof
+
+  # r_p = t / sqrt(t^2 + dof)
+  r_p <- df$t_value / sqrt(df$t_value^2 + df$dof)
+
+  # S1 SE = sqrt((1 - r_p^2) / dof)
+  df$se_s1 <- sqrt((1 - r_p^2) / df$dof)
+
+  # S2 SE = (1 - r_p^2) / sqrt(dof)
+  df$se_s2 <- (1 - r_p^2) / sqrt(df$dof)
+
+  # Fisher's Z = 0.5 * log((1 + r) / (1 - r))
+  df$fishers_z <- 0.5 * log((1 + df$effect) / (1 - df$effect))
+
+  # Fisher's Z SE = 1 / sqrt(n - 3)
+  df$fishers_z_se <- 1 / sqrt(df$sample_size - 3)
+
+  # PCC3 for UWLS+3: t / sqrt(t^2 + dof + 3)
+  df$pcc3 <- df$t_value / sqrt(df$t_value^2 + df$dof + 3)
+
+  # Assert all derived columns are finite and non-NA
+  derived_cols <- c("pcc_var", "se_s1", "se_s2", "fishers_z", "fishers_z_se", "pcc3")
+  for (col in derived_cols) {
+    if (any(is.na(df[[col]])) || any(!is.finite(df[[col]]))) {
+      n_bad <- sum(is.na(df[[col]]) | !is.finite(df[[col]]))
+      cli::cli_abort(paste0(
+        "Bug: ", n_bad, " non-finite/NA values in derived column '", col,
+        "' after validation. This should not happen."
+      ))
+    }
+  }
+
+  logger::log_info(paste("Computed derived quantities for", nrow(df), "observations.",
+                         "All", length(derived_cols), "derived columns validated."))
+
+  df
 }
