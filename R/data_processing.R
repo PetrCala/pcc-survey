@@ -467,7 +467,7 @@ validate_pcc_observations <- function(df) {
 #' Compute all derived quantities needed by the 8 methods
 #'
 #' Assumes the data has already passed validate_pcc_observations() and
-#' convert_inverse_relationships(). Adds columns: pcc_var, se_s1, se_s2,
+#' convert_inverse_relationships(). Adds columns: se_s1, se_s2,
 #' fishers_z, fishers_z_se, pcc3.
 #'
 #' All derived quantities are mathematically guaranteed to be finite when the
@@ -480,9 +480,6 @@ validate_pcc_observations <- function(df) {
 compute_derived_quantities <- function(df) {
   validate_columns(df, c("effect", "se", "t_value", "dof", "sample_size"))
 
-  # PCC variance = (1 - effect^2)^2 / dof
-  df$pcc_var <- (1 - df$effect^2)^2 / df$dof
-
   # r_p = t / sqrt(t^2 + dof)
   r_p <- df$t_value / sqrt(df$t_value^2 + df$dof)
 
@@ -492,8 +489,8 @@ compute_derived_quantities <- function(df) {
   # S2 variance = (1 - r_p^2)^2 / dof; S2 SE = sqrt(variance)
   df$se_s2 <- sqrt((1 - r_p^2)^2 / df$dof)
 
-  # Fisher's Z = 0.5 * log((1 + r) / (1 - r))
-  df$fishers_z <- 0.5 * log((1 + df$effect) / (1 - df$effect))
+  # Fisher's Z = 0.5 * log((1 + r_p) / (1 - r_p))
+  df$fishers_z <- 0.5 * log((1 + r_p) / (1 - r_p))
 
   # Fisher's Z SE = 1 / sqrt(n - 3)
   df$fishers_z_se <- 1 / sqrt(df$sample_size - 3)
@@ -502,7 +499,7 @@ compute_derived_quantities <- function(df) {
   df$pcc3 <- df$t_value / sqrt(df$t_value^2 + df$dof + 3)
 
   # Assert all derived columns are finite and non-NA
-  derived_cols <- c("pcc_var", "se_s1", "se_s2", "fishers_z", "fishers_z_se", "pcc3")
+  derived_cols <- c("se_s1", "se_s2", "fishers_z", "fishers_z_se", "pcc3")
   for (col in derived_cols) {
     if (any(is.na(df[[col]])) || any(!is.finite(df[[col]]))) {
       n_bad <- sum(is.na(df[[col]]) | !is.finite(df[[col]]))

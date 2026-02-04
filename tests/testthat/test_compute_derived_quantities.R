@@ -16,20 +16,11 @@ test_that("compute_derived_quantities adds all 6 derived columns", {
   df <- make_valid_df()
   result <- compute_derived_quantities(df)
 
-  expect_true("pcc_var" %in% colnames(result))
   expect_true("se_s1" %in% colnames(result))
   expect_true("se_s2" %in% colnames(result))
   expect_true("fishers_z" %in% colnames(result))
   expect_true("fishers_z_se" %in% colnames(result))
   expect_true("pcc3" %in% colnames(result))
-})
-
-test_that("compute_derived_quantities computes pcc_var correctly", {
-  df <- make_valid_df()
-  result <- compute_derived_quantities(df)
-
-  expected <- (1 - df$effect^2)^2 / df$dof
-  expect_equal(result$pcc_var, expected, tolerance = 1e-10)
 })
 
 test_that("compute_derived_quantities computes se_s1 correctly", {
@@ -78,7 +69,7 @@ test_that("compute_derived_quantities all outputs are finite", {
   df <- make_valid_df()
   result <- compute_derived_quantities(df)
 
-  derived_cols <- c("pcc_var", "se_s1", "se_s2", "fishers_z", "fishers_z_se", "pcc3")
+  derived_cols <- c("se_s1", "se_s2", "fishers_z", "fishers_z_se", "pcc3")
   for (col in derived_cols) {
     expect_true(all(is.finite(result[[col]])),
                 info = paste("Column", col, "should be all finite"))
@@ -133,8 +124,7 @@ test_that("compute_derived_quantities handles negative effects correctly", {
   # pcc3 should be negative for negative t_values
   expect_true(all(result$pcc3 < 0))
 
-  # se_s1, se_s2, pcc_var should still be positive
+  # se_s1, se_s2 should still be positive
   expect_true(all(result$se_s1 > 0))
   expect_true(all(result$se_s2 > 0))
-  expect_true(all(result$pcc_var > 0))
 })
