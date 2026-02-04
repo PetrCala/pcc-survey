@@ -87,15 +87,6 @@ run_psb_analysis <- function(config_path = NULL, alpha = 0.05) {
 
   psb_df_out <- do.call(rbind, psb_list)
 
-  # Add a row for the full data frame
-  pcc_df$meta <- "All meta-analyses"
-  psb_full_df <- get_psb_metaflavours(
-    pcc_df,
-    re_method = config$methods$re_method,
-    alpha = alpha
-  )
-  psb_df_out <- rbind(psb_df_out, psb_full_df)
-
   # Add an index
   if (config$analysis$add_idx_column) {
     idx <- seq_len(nrow(psb_df_out))
