@@ -2,270 +2,100 @@
 
 [![R version](https://img.shields.io/badge/R%20version-%3E%3D%204.1.0-blue.svg)](https://www.r-project.org/)
 
-This repository provides a **reproducible R package** for a PCC methods survey.
+A reproducible R package for a PCC (Partial Correlation Coefficient) methods survey. It processes a large meta-analytic dataset and produces summary statistics across multiple estimation methods.
 
 ## Table of Contents
 
-- [Data Requirements](#data-requirements)
-- [Running Replication (R Only)](#running-replication-r-only)
 - [Prerequisites](#prerequisites)
 - [Quick Start](#quick-start)
-- [Installation](#installation)
-- [Usage](#usage)
-- [Configuration](#configuration)
 - [Outputs](#outputs)
+- [Usage Reference](#usage-reference)
+- [Configuration](#configuration)
+- [Data](#data)
 - [Reproducibility](#reproducibility)
 - [Troubleshooting](#troubleshooting)
 - [Development](#development)
-
-## Data Requirements
-
-### Full Dataset
-
-The analysis requires `chris_data.xlsx` in the `data/` folder:
-
-1. **Obtain the source file**: Named `chris_data.xlsx` (200,000+ rows), available at [this OSF link](https://osf.io/bg98z/files/osfstorage)
-
-2. **Place the file**:
-
-   ```bash
-   # Copy to data/ folder
-   cp /path/to/source/file.xlsx data/chris_data.xlsx
-   ```
-
-3. **Verify**:
-
-   ```bash
-   ls -lh data/chris_data.xlsx
-   ```
-
-The file must contain a sheet named `"Main"` with the following columns:
-
-- `Title` (study identifier)
-- `Effect type` (should include "correlation" for PCC studies)
-- `Effect size`
-- `Standard error`
-- `t-stat`
-- `Sample size`
-- `Filename` (meta-analysis identifier)
-- `Author 1`
-- `Year published`
-
-### Sample Data
-
-A minimal sample dataset is included at `inst/extdata/sample_data.xlsx` for testing. Use `run_chris_analysis(use_sample = TRUE)` to test without the full dataset.
-
-## Running Replication (R Only)
-
-You can run the complete replication workflow using R only, without requiring `make`:
-
-```r
-# 1. Restore dependencies
-renv::restore()
-
-# 2. Load the package
-devtools::load_all()
-
-# 3. Check data availability
-check_data_availability()
-
-# 4. Run the analysis
-results <- run_chris_analysis()
-
-# Results are saved to:
-# - output/chris_results.csv
-# - output/estimator_summary.csv
-# - output/session_info.txt
-# - logs/ (timestamped log files)
-```
-
-**Alternative**: For quick testing without the full dataset:
-
-```r
-renv::restore()
-devtools::load_all()
-results <- run_chris_analysis(use_sample = TRUE)
-```
+- [Citation](#citation)
 
 ## Prerequisites
 
-### System Requirements
+- **R** >= 4.1.0
+- **make** is optional — all workflows can be run directly from R (see [Quick Start](#quick-start))
 
-- **R**: Version >= 4.1.0
-- **make**: For using Makefile commands (optional but recommended)
-
-**Important**: If you plan to use `make` commands (recommended), you must install `make` first. See OS-specific instructions below.
-
-### Installing make
+### System libraries (for compiling R packages from source)
 
 #### macOS
 
 ```bash
-# Install Command Line Tools (provides make)
 xcode-select --install
 ```
 
 #### Linux (Debian/Ubuntu)
 
 ```bash
-sudo apt-get update
-sudo apt-get install -y make
+sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev
 ```
 
 #### Linux (Fedora)
 
 ```bash
-sudo dnf install -y make
+sudo dnf install -y libcurl-devel openssl-devel libxml2-devel
 ```
 
 #### Windows
 
-Three options (pick one):
-
-1. **WSL2 (Recommended)**: Install Ubuntu in WSL2, then install make:
-
-   ```bash
-   sudo apt-get update && sudo apt-get install -y make
-   ```
-
-2. **Git Bash**: Install Git for Windows and MSYS2 for make
-
-3. **Rtools**: Install Rtools for your R version (includes make)
-
-### R Package Dependencies
-
-All dependencies are managed via `renv` and listed in `renv.lock`. Key packages:
-
-- `metafor`
-- `data.table`
-- `readxl`
-- And others (see `DESCRIPTION`)
-
-### OS-Specific Setup
-
-#### macOS
-
-```bash
-# Install R from CRAN
-# Install Command Line Tools (provides make)
-xcode-select --install
-```
-
-#### Linux (Debian/Ubuntu)
-
-```bash
-sudo apt-get update
-sudo apt-get install -y r-base make libcurl4-openssl-dev libssl-dev libxml2-dev
-```
-
-#### Linux (Fedora)
-
-```bash
-sudo dnf install -y R make libcurl-devel openssl-devel libxml2-devel
-```
-
-#### Windows
-
-Three options (pick one):
-
-1. **WSL2 (Recommended)**: Install Ubuntu in WSL2, then install R + make
-2. **Git Bash**: Install Git for Windows and MSYS2 for make
-3. **Rtools**: Install Rtools for your R version (includes make)
-
-Ensure `Rscript` is in your `PATH`.
+Install [Rtools](https://cran.r-project.org/bin/windows/Rtools/) for your R version. Ensure `Rscript` is in your `PATH`.
 
 ## Quick Start
 
-### One-Command Replication
+Open R in the project root directory and run:
 
-For a complete replication workflow:
+```r
+# 1. Install renv if needed, then restore all dependencies
+if (!requireNamespace("renv", quietly = TRUE)) {
+  install.packages("renv", repos = "https://cloud.r-project.org")
+}
+renv::restore()
+
+# 2. Load the package
+devtools::load_all(".")
+
+# 3. Run the analysis
+run_pcc_survey_analysis()
+```
+
+Results are written to `output/` (see [Outputs](#outputs)).
+
+### Using make (optional)
+
+If you have `make` installed, the equivalent one-liner is:
 
 ```bash
 make replicate
 ```
 
-This will:
+This runs setup, data checks, and the analysis in sequence. Run `make help` to see all available targets.
 
-1. Restore all dependencies using `renv`
-2. Check data availability
-3. Run the complete analysis
-4. Generate all outputs
+## Outputs
 
-**Note**: Requires `make` to be installed (see [Prerequisites](#prerequisites)).
+| File | Description |
+| --- | --- |
+| `output/pcc_survey_results.csv` | Main results — statistics for each meta-analysis |
+| `output/estimator_summary.csv` | Summary statistics across all estimators (Table 1) |
+| `output/psb_results.csv` | Publication Selection Bias analysis results |
+| `output/session_info.txt` | R session info for reproducibility |
+| `logs/pcc_survey_analysis_YYYYMMDD_HHMMSS.log` | Timestamped execution log |
 
-### Step-by-Step
+## Usage Reference
 
-```bash
-# 1. Restore dependencies
-make setup
-
-# 2. Run analysis
-make run
-```
-
-**Note**: You need the `chris_data.xlsx` file in the `data/` folder (see [Data Requirements](#data-requirements)).
-
-### Using Sample Data
-
-For quick testing without the full dataset:
-
-```r
-devtools::load_all()
-run_chris_analysis(use_sample = TRUE)
-```
-
-## Installation
-
-### From Source
-
-```r
-# Install devtools if needed
-if (!requireNamespace("devtools", quietly = TRUE)) {
-  install.packages("devtools")
-}
-
-# Install the package
-devtools::install_github("USERNAME/pcc-survey")
-```
-
-### Using renv (Recommended for Reproducibility)
-
-The package uses `renv` for dependency management. After cloning:
-
-```bash
-# Restore the exact environment
-Rscript -e "renv::restore()"
-```
-
-## Usage
-
-### Makefile Commands
-
-```bash
-make help          # Show all available commands
-make setup         # Restore dependencies via renv
-make snapshot      # Update renv.lock with current package versions
-make replicate     # Complete replication workflow
-make run           # Run Chris analysis
-make run-psb       # Run PSB analysis
-make test          # Run package tests
-make check         # Run R CMD check
-make document      # Generate roxygen documentation
-make clean         # Remove generated outputs
-make doctor        # Print environment information
-```
-
-### R Functions
+### R functions
 
 ```r
 # Load the package
-library(pccsurvey)
+devtools::load_all(".")
 
-# Run Chris analysis
-results <- run_chris_analysis()
-
-# Run with sample data
-results <- run_chris_analysis(use_sample = TRUE)
+# Run PCC Survey analysis
+results <- run_pcc_survey_analysis()
 
 # Run PSB analysis
 psb_results <- run_psb_analysis()
@@ -274,91 +104,93 @@ psb_results <- run_psb_analysis()
 check_data_availability()
 ```
 
+### make targets
+
+```bash
+make help       # Show all available targets
+make setup      # Restore dependencies via renv
+make replicate  # Full workflow: setup + data check + analysis
+make run        # Run PCC Survey analysis only
+make run-psb    # Run PSB analysis only
+make test       # Run testthat tests
+make check      # Run R CMD check
+make document   # Regenerate roxygen docs
+make lint       # Run lintr (exits non-zero on lint errors)
+make clean      # Remove generated output files
+make doctor     # Print R and package version info
+make zip        # Bundle output CSVs, session_info, and latest log into a zip
+```
+
 ## Configuration
 
-Configuration is in `inst/extdata/chris_config.yaml`. Key settings:
+Settings are in `inst/extdata/pcc_survey_config.yaml`. Key sections:
 
-- **Data**: File name, sheet name, column mappings
-- **Analysis**: PCC identifier, index column
-- **Methods**: Random-effects methods (RE, Fisher's Z)
-- **Cleaning**: Data cleaning options (DOF filling, inverse relationships)
-- **Logging**: Log level, file settings
-- **Caching**: Enable/disable, cache age
-- **Output**: Output file names and directories
+| Section | Controls |
+| --- | --- |
+| `data` | Input file name and sheet name |
+| `cols` | Column mappings (Excel column names → internal names) |
+| `analysis` | PCC identifier, index column |
+| `methods` | Random-effects estimators (ML, REML, DL) |
+| `cleaning` | DOF filling, t-value recalculation, inverse relationship conversion |
+| `filtering` | Optionally restrict to a single meta-analysis |
+| `logging` | Log level, file output settings |
+| `caching` | Enable/disable result caching, cache age |
+| `output` | Output file names and directories |
 
-## Outputs
+## Data
 
-### Analysis Results
+The analysis dataset is included in the repository at `data/pcc_survey_data.xlsx`. No external download is required.
 
-- `output/chris_results.csv` - Main analysis results with statistics for each meta-analysis
-- `output/estimator_summary.csv` - Summary statistics across all estimators (Table 1)
-- `output/session_info.txt` - Session information for reproducibility
+The file must contain a sheet named `"Main"` with the following columns:
 
-### Logs
+| Column | Description |
+| --- | --- |
+| `Title` | Study identifier |
+| `Effect type` | Should include `"correlation"` for PCC studies |
+| `Effect size` | Observed effect size |
+| `Standard error` | Standard error of the effect |
+| `t-stat` | t-statistic |
+| `Sample size` | Sample size |
+| `Filename` | Meta-analysis identifier |
+| `Author 1` | First author name |
+| `Year published` | Publication year |
 
-- `logs/chris_analysis_YYYYMMDD_HHMMSS.log` - Timestamped detailed execution log
-
-### PSB Analysis
-
-- `output/psb_results.csv` - Publication Selection Bias analysis results
+If you need to substitute a different dataset, place it at `data/pcc_survey_data.xlsx` (or update the path in `pcc_survey_config.yaml`) and ensure it matches the schema above.
 
 ## Reproducibility
 
-### Environment Locking
+All package versions are locked via `renv`. The `renv.lock` file guarantees the same package versions are installed on any machine via `renv::restore()`.
 
-The package uses `renv` to lock all dependency versions. The `renv.lock` file ensures:
-
-- Exact package versions across installations
-- Reproducible results across platforms
-- Easy environment restoration
-
-### Session Information
-
-Each analysis run saves `session_info.txt` with:
-
-- R version
-- Package versions
-- Platform information
-
-### Expected Results
-
-For verification, compare outputs to reference results (if provided in `inst/expected/`).
+Each analysis run also writes `output/session_info.txt` recording the R version, package versions, and platform.
 
 ## Troubleshooting
 
-### Data File Not Found
+### Missing dependencies
 
-**Error**: `Data file not found: data/chris_data.xlsx`
-
-**Solution**:
-
-1. Verify the file exists: `ls -lh data/chris_data.xlsx`
-2. Check file permissions: `chmod 644 data/chris_data.xlsx`
-3. Use sample data for testing: `run_chris_analysis(use_sample = TRUE)`
-
-### Missing Dependencies
-
-**Error**: Package installation fails
-
-**Solution**:
-
-```bash
-# Restore via renv
-make setup
-
-# Or manually
-Rscript -e "renv::restore()"
+```r
+renv::restore()
+# or, if renv itself fails to initialize:
+renv::init()
+renv::restore(prompt = FALSE)
 ```
 
-### Platform-Specific Issues
+### Data file not found
 
-#### macOS: Missing Command Line Tools
+Verify the file is present:
 
 ```bash
-xcode-select --install
+ls -lh data/pcc_survey_data.xlsx
 ```
 
-#### Linux: Missing System Libraries
+If the file is missing from your clone, check that Git LFS (if used) is properly initialized, or re-copy the file to `data/pcc_survey_data.xlsx`.
+
+### Excel file reading errors
+
+1. Verify the file is not corrupted
+2. Confirm the sheet is named `"Main"` (matches `data.sheet` in `pcc_survey_config.yaml`)
+3. Ensure `readxl` is installed: `install.packages("readxl")`
+
+### Linux: missing system libraries
 
 ```bash
 # Debian/Ubuntu
@@ -368,70 +200,43 @@ sudo apt-get install -y libcurl4-openssl-dev libssl-dev libxml2-dev
 sudo dnf install -y libcurl-devel openssl-devel libxml2-devel
 ```
 
-#### Windows: Rscript Not Found
+### Windows: Rscript not found
 
-Add R to your PATH:
-
-- R installation directory → `bin` folder
-- Or use Rtools which includes R in PATH
-
-### Excel File Reading Issues
-
-**Error**: Cannot read Excel file
-
-**Solutions**:
-
-1. Verify file is not corrupted
-2. Check sheet name matches config (`"Main"` by default)
-3. Ensure `readxl` package is installed: `install.packages("readxl")`
-
-### renv Issues
-
-**Error**: renv restore fails
-
-**Solutions**:
-
-```r
-# Reinitialize renv
-renv::init()
-
-# Or restore without prompt
-renv::restore(prompt = FALSE)
-```
+Add the R `bin` directory to your `PATH`, or install [Rtools](https://cran.r-project.org/bin/windows/Rtools/) which includes it.
 
 ## Development
 
-### Running Tests
+### Running tests
 
 ```bash
 make test
+# or
+Rscript -e "devtools::test()"
 ```
 
-### Building Documentation
+### Generating documentation
 
 ```bash
 make document
+# or
+Rscript -e "devtools::document()"
 ```
 
-### Code Quality
+### Code quality
 
 ```bash
-make lint    # Run lintr
-make check   # Run R CMD check
+make lint   # lintr
+make check  # R CMD check
 ```
 
 ### Contributing
 
 1. Fork the repository
 2. Create a feature branch
-3. Make changes
-4. Run tests: `make test`
-5. Run checks: `make check`
-6. Submit a pull request
+3. Make changes and run `make test` and `make check`
+4. Submit a pull request
 
 ## Citation
-
-To cite this package:
 
 ```r
 citation("pccsurvey")
@@ -439,15 +244,8 @@ citation("pccsurvey")
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ## Author
 
-Petr Čala - <cala.p@seznam.cz>
-
-## Acknowledgments
-
-This package uses the following key dependencies:
-
-- `metafor` - Meta-Analysis Package for R
-- And others (see `DESCRIPTION`)
+Petr Čala — <cala.p@seznam.cz>
