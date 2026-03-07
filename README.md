@@ -2,7 +2,7 @@
 
 [![R version](https://img.shields.io/badge/R%20version-%3E%3D%204.1.0-blue.svg)](https://www.r-project.org/)
 
-This repository provides a **reproducible R package** for meta-analysis of PCC (Partial Correlation Coefficient) studies. It includes the Chris analysis workflow for processing large datasets and calculating various meta-analysis statistics using multiple methods.
+This repository provides a **reproducible R package** for a PCC methods survey.
 
 ## Table of Contents
 
