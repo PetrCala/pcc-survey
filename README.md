@@ -245,7 +245,3 @@ citation("pccsurvey")
 ## License
 
 MIT License — see [LICENSE](LICENSE) for details.
-
-## Author
-
-Petr Čala — <cala.p@seznam.cz>
