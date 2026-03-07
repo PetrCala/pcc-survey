@@ -1,8 +1,6 @@
-# PCC Survey (`pccsurvey`)
+# PCC Survey
 
-[![R-CMD-check](https://github.com/USERNAME/pcc-survey/workflows/R-CMD-check/badge.svg)](https://github.com/USERNAME/pcc-survey/actions)
 [![R version](https://img.shields.io/badge/R%20version-%3E%3D%204.1.0-blue.svg)](https://www.r-project.org/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 This repository provides a **reproducible R package** for meta-analysis of PCC (Partial Correlation Coefficient) studies. It includes the Chris analysis workflow for processing large datasets and calculating various meta-analysis statistics using multiple methods.
 
