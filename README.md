@@ -26,7 +26,7 @@ This repository provides a **reproducible R package** for meta-analysis of PCC (
 
 The analysis requires `chris_data.xlsx` in the `data/` folder:
 
-1. **Obtain the source file**: Typically named `Copy of all_datasets_combined End 2023.xlsx` (200,000+ rows)
+1. **Obtain the source file**: Named `chris_data.xlsx` (200,000+ rows), available at [this OSF link](https://osf.io/bg98z/files/osfstorage)
 
 2. **Place the file**:
 
