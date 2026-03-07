@@ -1,4 +1,4 @@
-# Utility functions for Chris analysis
+# Utility functions for PCC Survey analysis
 # Extracted and simplified from meta-facilitator
 
 #' Check whether an object is empty
@@ -112,13 +112,13 @@ pluralize <- function(word) {
   }
 }
 
-#' Save the chris analysis results to CSV
+#' Save the PCC Survey analysis results to CSV
 #'
 #' @param df [data.frame] The data frame to save
 #' @param file_name [character] The output file name
 #' @param output_dir [character] The output directory
 #' @export
-save_chris_results <- function(df, file_name = "chris_results.csv", output_dir = "data") {
+save_pcc_survey_results <- function(df, file_name = "pcc_survey_results.csv", output_dir = "data") {
   # Create the output folder
   if (!dir.exists(output_dir)) {
     dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)

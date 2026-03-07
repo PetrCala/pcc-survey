@@ -1,7 +1,7 @@
-# Simplified logging setup for Chris analysis
+# Simplified logging setup for PCC Survey analysis
 # Extracted and simplified from meta-facilitator
 
-#' Setup logging for the chris analysis
+#' Setup logging for the PCC Survey analysis
 #'
 #' @param log_level [character] Log level: "DEBUG", "INFO", "WARN", "ERROR", "FATAL"
 #' @param log_to_console_only [logical] If TRUE, only log to console
@@ -9,10 +9,10 @@
 #' @param log_flush_on_setup [logical] If TRUE, clear the log file on startup (not used with timestamped files)
 #' @return [character] The path to the log file (or NULL if console only)
 #' @export
-setup_chris_logging <- function(
+setup_pcc_survey_logging <- function(
     log_level = "INFO",
     log_to_console_only = FALSE,
-    log_file_name = "chris_analysis.log",
+    log_file_name = "pcc_survey_analysis.log",
     log_flush_on_setup = TRUE) {
   # Map log level string to logger constant
   log_level_map <- list(

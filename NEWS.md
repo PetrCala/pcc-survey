@@ -5,7 +5,7 @@
 ### Added
 - Initial release of pccsurvey package
 - Support for PCC (Partial Correlation Coefficient) meta-analysis
-- Chris analysis workflow for processing large datasets
+- PCC Survey analysis workflow for processing large datasets
 - PSB (Publication Selection Bias) analysis
 - Multiple meta-analysis methods: RE, UWLS, UWLS+3, HSMA, Fisher's Z, WAIV2, MAIVE
 - Data validation and availability checking functions

@@ -1,4 +1,4 @@
-# Simplified caching utilities for Chris analysis
+# Simplified caching utilities for PCC Survey analysis
 # Extracted and simplified from meta-facilitator
 
 #' Run a function with optional caching

@@ -2,7 +2,7 @@ Package: pccsurvey
 Title: PCC Survey Analysis Utilities
 Version: 0.0.0.9000
 Authors@R: person("Petr", "Čala", email = "cala.p@seznam.cz", role = c("aut", "cre"))
-Description: Tools for meta-analysis of PCC (Partial Correlation Coefficient) studies, including the Chris analysis workflow for processing large datasets and calculating meta-analysis statistics.
+Description: Tools for meta-analysis of PCC (Partial Correlation Coefficient) studies, including the PCC Survey analysis workflow for processing large datasets and calculating meta-analysis statistics.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)

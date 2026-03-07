@@ -1,21 +1,21 @@
-# Entry point for nunning the Chris analysis
+# Entry point for running the PCC Survey analysis
 # This function loads the package, sets up logging, and runs the analysis
 
-#' Run the Chris analysis workflow
+#' Run the PCC Survey analysis workflow
 #'
-#' This is the main entrypoint for the chris analysis. It loads configuration,
+#' This is the main entrypoint for the PCC Survey analysis. It loads configuration,
 #' sets up logging, runs the analysis, and saves results to CSV.
 #'
-#' @param config_path Path to the chris config YAML file. Defaults to
-#'   `inst/extdata/chris_config.yaml`.
+#' @param config_path Path to the PCC Survey config YAML file. Defaults to
+#'   `inst/extdata/pcc_survey_config.yaml`.
 #' @param use_sample [logical] If TRUE, use sample data from `inst/extdata/sample_data.xlsx`
 #'   instead of the full dataset. Useful for testing. Default: FALSE.
 #' @return Invisibly returns the analysis results data frame.
 #' @export
-run_chris_analysis <- function(config_path = NULL, use_sample = FALSE) {
+run_pcc_survey_analysis <- function(config_path = NULL, use_sample = FALSE) {
   # Load config
   if (is.null(config_path)) {
-    config_path <- pccsurvey_extdata("chris_config.yaml")
+    config_path <- pccsurvey_extdata("pcc_survey_config.yaml")
   }
 
   if (!file.exists(config_path)) {
@@ -38,20 +38,20 @@ run_chris_analysis <- function(config_path = NULL, use_sample = FALSE) {
   }
 
   # Setup logging
-  setup_chris_logging(
+  setup_pcc_survey_logging(
     log_level = config$logging$log_level,
     log_to_console_only = config$logging$log_to_console_only,
     log_file_name = config$logging$log_file_name,
     log_flush_on_setup = config$logging$log_flush_on_setup
   )
 
-  logger::log_info("Starting Chris analysis")
+  logger::log_info("Starting PCC Survey analysis")
 
   # Run the analysis
-  results <- chris_analyse(config, data_dir = data_dir)
+  results <- pcc_survey_analyse(config, data_dir = data_dir)
 
   # Save results
-  save_chris_results(
+  save_pcc_survey_results(
     df = results,
     file_name = config$output$file_name,
     output_dir = config$output$output_dir
@@ -73,6 +73,6 @@ run_chris_analysis <- function(config_path = NULL, use_sample = FALSE) {
   capture.output(print(sessionInfo(), locale = FALSE), file = session_info_file)
   logger::log_info(paste("Session info saved to:", session_info_file))
 
-  logger::log_info("Chris analysis completed successfully")
+  logger::log_info("PCC Survey analysis completed successfully")
   invisible(results)
 }

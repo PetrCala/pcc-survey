@@ -27,4 +27,4 @@ RUN Rscript -e "renv::restore()"
 RUN Rscript -e "if (!requireNamespace('devtools', quietly=TRUE)) install.packages('devtools', repos='https://cloud.r-project.org'); devtools::install()"
 
 # Set default command
-CMD ["Rscript", "-e", "pccsurvey::run_chris_analysis()"]
+CMD ["Rscript", "-e", "pccsurvey::run_pcc_survey_analysis()"]

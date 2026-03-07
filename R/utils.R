@@ -9,18 +9,18 @@ pccsurvey_extdata <- function(...) {
   }
 }
 
-#' Read and return the chris config YAML file as a list
+#' Read and return the PCC Survey config YAML file as a list
 #'
 #' @param path [character] Path to the config YAML file. If NULL, uses the default
-#'   config file from `inst/extdata/chris_config.yaml`.
+#'   config file from `inst/extdata/pcc_survey_config.yaml`.
 #' @return [list] The configuration list loaded from the YAML file
-read_chris_config <- function(path = NULL) {
+read_pcc_survey_config <- function(path = NULL) {
   if (is.null(path)) {
-    path <- pccsurvey_extdata("chris_config.yaml")
+    path <- pccsurvey_extdata("pcc_survey_config.yaml")
   }
 
   if (!file.exists(path)) {
-    cli::cli_abort("Chris config file does not exist: {.file {path}}")
+    cli::cli_abort("PCC Survey config file does not exist: {.file {path}}")
   }
 
   yaml::read_yaml(path)

@@ -5,12 +5,12 @@
 #' Verifies that required data files exist in the expected locations.
 #' Provides helpful error messages if files are missing.
 #'
-#' @param file_name [character] Name of the data file to check (default: "chris_data.xlsx")
+#' @param file_name [character] Name of the data file to check (default: "pcc_survey_data.xlsx")
 #' @param data_dir [character] Directory containing the data file (default: "data")
 #' @param sheet_name [character] Name of the sheet to check (default: "Main")
 #' @return [logical] TRUE if file exists and is readable, FALSE otherwise
 #' @export
-check_data_availability <- function(file_name = "chris_data.xlsx", data_dir = "data", sheet_name = "Main") {
+check_data_availability <- function(file_name = "pcc_survey_data.xlsx", data_dir = "data", sheet_name = "Main") {
   file_path <- file.path(data_dir, file_name)
 
   if (!file.exists(file_path)) {
@@ -124,13 +124,13 @@ get_data_checksum <- function(file_path, algorithm = c("md5", "sha256")) {
 #'
 #' Comprehensive check of data file availability, structure, and basic statistics.
 #'
-#' @param file_name [character] Name of the data file (default: "chris_data.xlsx")
+#' @param file_name [character] Name of the data file (default: "pcc_survey_data.xlsx")
 #' @param data_dir [character] Directory containing the data file (default: "data")
 #' @param sheet_name [character] Name of the sheet to check (default: "Main")
 #' @param validate_structure [logical] Whether to validate structure after reading (default: FALSE)
 #' @return [list] List with file information
 #' @export
-check_data_file <- function(file_name = "chris_data.xlsx", data_dir = "data", sheet_name = "Main", validate_structure = FALSE) {
+check_data_file <- function(file_name = "pcc_survey_data.xlsx", data_dir = "data", sheet_name = "Main", validate_structure = FALSE) {
   file_path <- file.path(data_dir, file_name)
 
   result <- list(

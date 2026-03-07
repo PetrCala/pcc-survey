@@ -1,9 +1,9 @@
-# Configuration for Chris analysis
+# Configuration for PCC Survey analysis
 # Extracted from meta-facilitator/r/config.yaml
 
 # Data source
 data:
-  file_name: "chris_data.xlsx"
+  file_name: "pcc_survey_data.xlsx"
   sheet_name: "Main"
 
 # Column mappings (source column names in Excel -> internal names)
@@ -46,7 +46,7 @@ filtering:
 logging:
   log_level: "DEBUG"  # DEBUG, INFO, WARN, ERROR, FATAL
   log_to_console_only: false  # If true, don't write to file
-  log_file_name: "chris_analysis.log"
+  log_file_name: "pcc_survey_analysis.log"
   log_flush_on_setup: true  # Clear log file on startup
 
 # Caching
@@ -57,6 +57,6 @@ caching:
 
 # Output
 output:
-  file_name: "chris_results.csv"  # Output CSV file name
+  file_name: "pcc_survey_results.csv"  # Output CSV file name
   output_dir: "output"  # Output directory relative to project root
   estimator_summary_file_name: "estimator_summary.csv"  # Estimator summary statistics (Table 1) relative to project root

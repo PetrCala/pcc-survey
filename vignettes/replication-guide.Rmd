@@ -80,7 +80,7 @@ This will install all required packages at the exact versions specified in `renv
    # Create data directory if it doesn't exist
    dir.create("data", showWarnings = FALSE)
    
-   # Copy your file to data/chris_data.xlsx
+   # Copy your file to data/pcc_survey_data.xlsx
    # (Do this manually or via file system)
    ```
 
@@ -88,7 +88,7 @@ This will install all required packages at the exact versions specified in `renv
 
    ```r
    # Check if file exists
-   file.exists("data/chris_data.xlsx")
+   file.exists("data/pcc_survey_data.xlsx")
    
    # Check data availability
    check_data_availability()
@@ -100,7 +100,7 @@ If you want to test without the full dataset:
 
 ```r
 # Use the included sample data
-run_chris_analysis(use_sample = TRUE)
+run_pcc_survey_analysis(use_sample = TRUE)
 ```
 
 ## Step 4: Run the Analysis
@@ -112,14 +112,14 @@ run_chris_analysis(use_sample = TRUE)
 library(pccsurvey)
 
 # Run the complete analysis
-results <- run_chris_analysis()
+results <- run_pcc_survey_analysis()
 ```
 
 ### With Custom Configuration
 
 ```r
 # Specify custom config path
-results <- run_chris_analysis(
+results <- run_pcc_survey_analysis(
   config_path = "path/to/custom_config.yaml"
 )
 ```
@@ -144,7 +144,7 @@ make replicate
 
 ```r
 # Main results
-results_file <- "output/chris_results.csv"
+results_file <- "output/pcc_survey_results.csv"
 if (file.exists(results_file)) {
   results_df <- read.csv(results_file)
   head(results_df)
@@ -167,7 +167,7 @@ if (file.exists(session_file)) {
 
 ### Expected Output Structure
 
-The main results file (`chris_results.csv`) should contain:
+The main results file (`pcc_survey_results.csv`) should contain:
 
 - One row per meta-analysis (plus "All meta-analyses" row)
 - Columns for each estimator method:
@@ -203,7 +203,7 @@ cat(readLines("output/session_info.txt"), sep = "\n")
 check_data_file()
 
 # Use sample data for testing
-run_chris_analysis(use_sample = TRUE)
+run_pcc_survey_analysis(use_sample = TRUE)
 ```
 
 ### Dependency Issues
@@ -228,11 +228,11 @@ install.packages(c("metafor", "data.table", ...))
 
 ```r
 # Check config path
-config_path <- pccsurvey_extdata("chris_config.yaml")
+config_path <- pccsurvey_extdata("pcc_survey_config.yaml")
 file.exists(config_path)
 
 # Or specify custom path
-run_chris_analysis(config_path = "path/to/config.yaml")
+run_pcc_survey_analysis(config_path = "path/to/config.yaml")
 ```
 
 ## Advanced Usage
@@ -250,13 +250,13 @@ psb_results <- run_psb_analysis()
 
 ```r
 # Use data from different location
-config <- yaml::read_yaml(pccsurvey_extdata("chris_config.yaml"))
-results <- chris_analyse(config, data_dir = "custom/data/path")
+config <- yaml::read_yaml(pccsurvey_extdata("pcc_survey_config.yaml"))
+results <- pcc_survey_analyse(config, data_dir = "custom/data/path")
 ```
 
 ### Filtering to Single Meta-Analysis
 
-Edit `inst/extdata/chris_config.yaml`:
+Edit `inst/extdata/pcc_survey_config.yaml`:
 
 ```yaml
 filtering:
@@ -266,10 +266,10 @@ filtering:
 ## Verification Checklist
 
 - [ ] All dependencies installed via `renv::restore()`
-- [ ] Data file present in `data/chris_data.xlsx`
+- [ ] Data file present in `data/pcc_survey_data.xlsx`
 - [ ] Analysis completed without errors
 - [ ] Output files generated:
-  - [ ] `output/chris_results.csv`
+  - [ ] `output/pcc_survey_results.csv`
   - [ ] `output/estimator_summary.csv`
   - [ ] `output/session_info.txt`
 - [ ] Log file created in `logs/`

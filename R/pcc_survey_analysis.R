@@ -1,4 +1,4 @@
-# Main Chris analysis functions
+# Main PCC Survey analysis functions
 # Extracted and simplified from meta-facilitator
 
 #' Calculate the flavours (statistics) of a single meta-analysis data and return these as a data frame
@@ -8,7 +8,7 @@
 #' @param re_method_fishers_z [character] Random effects method for Fisher's z
 #' @return [data.frame] A data frame with the flavour results
 #' @export
-get_chris_metaflavours <- function(df, re_method = "ML", re_method_fishers_z = "ML") {
+get_pcc_survey_metaflavours <- function(df, re_method = "ML", re_method_fishers_z = "ML") {
   # Get the name of the meta-analysis
   meta <- unique(df$meta)
   if (length(meta) != 1) {
@@ -53,19 +53,19 @@ get_chris_metaflavours <- function(df, re_method = "ML", re_method_fishers_z = "
   as.data.frame(results)
 }
 
-#' Run the Chris analysis
+#' Run the PCC Survey analysis
 #'
-#' @param config [list] Configuration list loaded from chris_config.yaml
+#' @param config [list] Configuration list loaded from pcc_survey_config.yaml
 #' @param data_dir [character] Directory containing the data file (default: "data")
 #' @return [data.frame] The analysis results
 #' @export
-chris_analyse <- function(config, data_dir = "data") {
-  logger::log_info("Running the chris analysis")
+pcc_survey_analyse <- function(config, data_dir = "data") {
+  logger::log_info("Running the PCC Survey analysis")
 
   # Read the data (with caching if enabled)
   df <- maybe_cached(
     config,
-    read_chris_data,
+    read_pcc_survey_data,
     file_name = config$data$file_name,
     sheet_name = config$data$sheet_name,
     data_dir = data_dir
@@ -74,7 +74,7 @@ chris_analyse <- function(config, data_dir = "data") {
   # Clean the data (with caching if enabled)
   df <- maybe_cached(
     config,
-    clean_chris_data,
+    clean_pcc_survey_data,
     df = df,
     cols = config$cols,
     clean_names = config$cleaning$clean_names,
@@ -112,7 +112,7 @@ chris_analyse <- function(config, data_dir = "data") {
   # Calculate flavours for each meta-analysis
   get_flavours <- function() {
     lapply(split(pcc_df, pcc_df$meta), function(meta_df) {
-      get_chris_metaflavours(
+      get_pcc_survey_metaflavours(
         meta_df,
         re_method = config$methods$re_method,
         re_method_fishers_z = config$methods$re_method_fishers_z
@@ -141,7 +141,7 @@ chris_analyse <- function(config, data_dir = "data") {
 #' This produces Table 1 from the analysis.
 #' Statistics are returned with estimators as columns and statistics as rows.
 #'
-#' @param results_df [data.frame] Results from chris_analyse() containing estimator columns
+#' @param results_df [data.frame] Results from pcc_survey_analyse() containing estimator columns
 #' @return [data.frame] Summary table with statistics as rows and estimators as columns
 #' @export
 calculate_estimator_summary <- function(results_df) {

@@ -1,14 +1,14 @@
-# Data reading, cleaning, and preprocessing functions for Chris analysis
+# Data reading, cleaning, and preprocessing functions for PCC Survey analysis
 # Extracted and simplified from meta-facilitator
 
-#' Read Chris analysis data from Excel file
+#' Read PCC Survey analysis data from Excel file
 #'
 #' @param file_name [character] Name of the Excel file
 #' @param sheet_name [character] Name of the sheet to read
 #' @param data_dir [character] Directory containing the data file
 #' @return [data.frame] The loaded data
 #' @export
-read_chris_data <- function(file_name = "chris_data.xlsx", sheet_name = "Main", data_dir = "data") {
+read_pcc_survey_data <- function(file_name = "pcc_survey_data.xlsx", sheet_name = "Main", data_dir = "data") {
   # Check data availability first (provides helpful error messages)
   check_data_availability(file_name = file_name, data_dir = data_dir, sheet_name = sheet_name)
 
@@ -223,7 +223,7 @@ clean_names <- function(df) {
 #' @param recalculate_t_value [logical] Whether to recalculate t-values
 #' @return [data.frame] The cleaned data frame
 #' @export
-clean_chris_data <- function(df, cols, clean_names = FALSE, recalculate_t_value = TRUE) {
+clean_pcc_survey_data <- function(df, cols, clean_names = FALSE, recalculate_t_value = TRUE) {
   logger::log_debug("Cleaning data...")
 
   # Replace missing columns with NAs

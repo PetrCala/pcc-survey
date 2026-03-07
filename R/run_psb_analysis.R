@@ -6,15 +6,15 @@
 #' This is the main entrypoint for the PSB analysis. It loads configuration,
 #' sets up logging, runs the analysis, and saves results to CSV.
 #'
-#' @param config_path Path to the chris config YAML file. Defaults to
-#'   `inst/extdata/chris_config.yaml`.
+#' @param config_path Path to the PCC Survey config YAML file. Defaults to
+#'   `inst/extdata/pcc_survey_config.yaml`.
 #' @param alpha Significance level for statistical tests (default: 0.05)
 #' @return Invisibly returns the PSB analysis results data frame.
 #' @export
 run_psb_analysis <- function(config_path = NULL, alpha = 0.05) {
   # Load config
   if (is.null(config_path)) {
-    config_path <- pccsurvey_extdata("chris_config.yaml")
+    config_path <- pccsurvey_extdata("pcc_survey_config.yaml")
   }
 
   if (!file.exists(config_path)) {
@@ -24,7 +24,7 @@ run_psb_analysis <- function(config_path = NULL, alpha = 0.05) {
   config <- yaml::read_yaml(config_path)
 
   # Setup logging
-  setup_chris_logging(
+  setup_pcc_survey_logging(
     log_level = config$logging$log_level,
     log_to_console_only = config$logging$log_to_console_only,
     log_file_name = config$logging$log_file_name,
@@ -36,7 +36,7 @@ run_psb_analysis <- function(config_path = NULL, alpha = 0.05) {
   # Read the data (with caching if enabled)
   df <- maybe_cached(
     config,
-    read_chris_data,
+    read_pcc_survey_data,
     file_name = config$data$file_name,
     sheet_name = config$data$sheet_name
   )
@@ -44,7 +44,7 @@ run_psb_analysis <- function(config_path = NULL, alpha = 0.05) {
   # Clean the data (with caching if enabled)
   df <- maybe_cached(
     config,
-    clean_chris_data,
+    clean_pcc_survey_data,
     df = df,
     cols = config$cols,
     clean_names = config$cleaning$clean_names,
