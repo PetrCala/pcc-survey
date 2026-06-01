@@ -215,3 +215,32 @@ test_that("convert_inverse_relationships uses median when mean and median differ
   expect_true(mean_effect < 0) # Mean is negative
   expect_true(median_effect >= 0) # Median is non-negative
 })
+
+test_that("convert_inverse_relationships records flipped metas in attribute", {
+  df <- data.frame(
+    meta = c(rep("meta_A", 3), rep("meta_B", 3), rep("meta_C", 3)),
+    effect = c(-0.3, -0.2, -0.1, 0.1, 0.2, 0.3, -0.15, -0.1, -0.05),
+    t_value = c(-3, -2, -1, 1, 2, 3, -1.5, -1, -0.5),
+    se = rep(0.1, 9),
+    study = paste0("study", 1:9)
+  )
+
+  result <- convert_inverse_relationships(df, log_results = FALSE)
+
+  # meta_A and meta_C have negative medians and should be flagged
+  expect_setequal(attr(result, "flipped_metas"), c("meta_A", "meta_C"))
+})
+
+test_that("convert_inverse_relationships attribute is empty when nothing flips", {
+  df <- data.frame(
+    meta = rep("meta_pos", 3),
+    effect = c(0.1, 0.2, 0.3),
+    t_value = c(1, 2, 3),
+    se = rep(0.1, 3),
+    study = paste0("s", 1:3)
+  )
+
+  result <- convert_inverse_relationships(df, log_results = FALSE)
+
+  expect_equal(attr(result, "flipped_metas"), character(0))
+})

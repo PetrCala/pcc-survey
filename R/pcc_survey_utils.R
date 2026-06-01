@@ -149,3 +149,41 @@ save_estimator_summary <- function(summary_df, file_name = "estimator_summary.cs
   utils::write.csv(summary_df, file = output_path, row.names = FALSE)
   logger::log_info(paste("Estimator summary saved to", output_path))
 }
+
+#' Save the combined study-level dataset to CSV
+#'
+#' @param combined_df [data.frame] Combined dataset from build_combined_dataset()
+#' @param file_name [character] Output file name (default: "pcc_combined_dataset.csv")
+#' @param output_dir [character] Output directory (default: "data")
+#' @export
+save_combined_dataset <- function(combined_df, file_name = "pcc_combined_dataset.csv", output_dir = "data") {
+  # Create the output folder
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+  }
+
+  # Save the results
+  output_path <- file.path(output_dir, file_name)
+  logger::log_debug("Saving combined dataset to ", output_path)
+  utils::write.csv(combined_df, file = output_path, row.names = FALSE)
+  logger::log_info(paste("Combined dataset saved to", output_path))
+}
+
+#' Save the smallest-estimate counts to CSV
+#'
+#' @param counts_df [data.frame] Counts from calculate_smallest_estimate_counts()
+#' @param file_name [character] Output file name (default: "smallest_estimate_counts.csv")
+#' @param output_dir [character] Output directory (default: "data")
+#' @export
+save_smallest_estimate_counts <- function(counts_df, file_name = "smallest_estimate_counts.csv", output_dir = "data") {
+  # Create the output folder
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+  }
+
+  # Save the results
+  output_path <- file.path(output_dir, file_name)
+  logger::log_debug("Saving smallest-estimate counts to ", output_path)
+  utils::write.csv(counts_df, file = output_path, row.names = FALSE)
+  logger::log_info(paste("Smallest-estimate counts saved to", output_path))
+}
