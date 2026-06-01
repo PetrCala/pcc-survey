@@ -32,7 +32,7 @@ test_that("calculate_observed_significant handles boundary cases (positive only)
   expect_equal(observed, 2) # Only 1.96 and 1.961 are positive and significant
 })
 
-test_that("calculate_observed_significant handles NA values", {
+test_that("calculate_observed_significant errors on NA t_value", {
   df <- data.frame(
     t_value = c(0.5, NA_real_, 2.5, -2.0, NA_real_),
     dof = c(50, 50, 50, 50, 50),
@@ -40,10 +40,8 @@ test_that("calculate_observed_significant handles NA values", {
     study = paste0("study", 1:5)
   )
 
-  observed <- calculate_observed_significant(df, alpha = 0.05)
-  # Should count only positive non-NA significant values: 2.5 (1 study)
-  # -2.0 is negative, so not counted
-  expect_equal(observed, 1)
+  # calculate_observed_significant requires finite, non-NA t_value
+  expect_error(calculate_observed_significant(df, alpha = 0.05))
 })
 
 test_that("calculate_observed_significant handles custom alpha", {
@@ -71,6 +69,7 @@ test_that("calculate_expected_significant sums E_sigi correctly", {
     meta = "test_meta",
     study = c("study1", "study2", "study3")
   )
+  df$se_s1 <- df$se
 
   uwls_estimate <- 0.2
   tau2 <- get_re1_tau2(df)
@@ -94,6 +93,7 @@ test_that("calculate_expected_significant handles zero uwls_estimate", {
     meta = "test_meta",
     study = c("study1", "study2", "study3")
   )
+  df$se_s1 <- df$se
 
   uwls_estimate <- 0.0
   tau2 <- get_re1_tau2(df)
@@ -112,6 +112,7 @@ test_that("calculate_expected_significant handles large uwls_estimate", {
     meta = "test_meta",
     study = c("study1", "study2", "study3")
   )
+  df$se_s1 <- df$se
 
   uwls_estimate <- 0.2
   tau2 <- get_re1_tau2(df)
@@ -130,6 +131,7 @@ test_that("calculate_expected_significant handles custom se vector", {
     meta = "test_meta",
     study = c("study1", "study2", "study3")
   )
+  df$se_s1 <- df$se
 
   uwls_estimate <- 0.2
   tau2 <- get_re1_tau2(df)
@@ -142,7 +144,7 @@ test_that("calculate_expected_significant handles custom se vector", {
   expect_true(expected_custom >= 0 && expected_custom <= nrow(df))
 })
 
-test_that("calculate_expected_significant handles NA values", {
+test_that("calculate_expected_significant errors on NA se", {
   df <- data.frame(
     effect = c(0.1, 0.2, 0.3),
     se = c(0.1, NA_real_, 0.1),
@@ -150,15 +152,8 @@ test_that("calculate_expected_significant handles NA values", {
     meta = "test_meta",
     study = c("study1", "study2", "study3")
   )
+  df$se_s1 <- df$se
 
-  uwls_estimate <- 0.2
-  tau2 <- get_re1_tau2(df)
-  if (is.na(tau2)) tau2 <- 0.0 # Fallback for test
-  expected <- calculate_expected_significant(df, uwls_estimate, tau2)
-
-  # Should sum only non-NA E_sigi values
-  esigi <- calculate_esigi(df, uwls_estimate, tau2)
-  expected_manual <- sum(esigi, na.rm = TRUE)
-
-  expect_equal(expected, expected_manual, tolerance = 1e-6)
+  # calculate_esigi (via calculate_expected_significant) requires finite, positive SE
+  expect_error(calculate_expected_significant(df, uwls_estimate = 0.2, tau2 = 0.0))
 })

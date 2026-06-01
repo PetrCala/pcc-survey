@@ -45,7 +45,8 @@ test_that("compute_derived_quantities computes fishers_z correctly", {
   df <- make_valid_df()
   result <- compute_derived_quantities(df)
 
-  expected <- 0.5 * log((1 + df$effect) / (1 - df$effect))
+  r_p <- df$t_value / sqrt(df$t_value^2 + df$dof)
+  expected <- 0.5 * log((1 + r_p) / (1 - r_p))
   expect_equal(result$fishers_z, expected, tolerance = 1e-10)
 })
 
