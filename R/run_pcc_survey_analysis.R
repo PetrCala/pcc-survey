@@ -65,6 +65,24 @@ run_pcc_survey_analysis <- function(config_path = NULL, use_sample = FALSE) {
     output_dir = config$output$output_dir
   )
 
+  # Save the combined study-level dataset (item 3) for the aggregate FAT-PET panel
+  combined_dataset <- attr(results, "combined_dataset")
+  if (!is.null(combined_dataset)) {
+    save_combined_dataset(
+      combined_df = combined_dataset,
+      file_name = config$output$combined_dataset_file_name %||% "pcc_combined_dataset.csv",
+      output_dir = config$output$output_dir
+    )
+  }
+
+  # Calculate and save the smallest-estimate ("most conservative") counts (item 4)
+  smallest_counts <- calculate_smallest_estimate_counts(results)
+  save_smallest_estimate_counts(
+    counts_df = smallest_counts,
+    file_name = config$output$smallest_counts_file_name %||% "smallest_estimate_counts.csv",
+    output_dir = config$output$output_dir
+  )
+
   # Save session info for reproducibility
   session_info_file <- file.path(config$output$output_dir, "session_info.txt")
   if (!dir.exists(config$output$output_dir)) {

@@ -377,6 +377,10 @@ convert_inverse_relationships <- function(df, log_results = TRUE) {
   result_df <- do.call(rbind, meta_list)
   rownames(result_df) <- NULL # Reset row names
 
+  # Record which meta-analyses were flipped (for the sign-flip count / `flipped`
+  # flag downstream). Names from split() are coerced to character.
+  attr(result_df, "flipped_metas") <- as.character(converted_metas)
+
   if (log_results && n_converted > 0) {
     logger::log_info(paste("Converted", n_converted, "meta-analysis(es) with negative median PCCs for comparability"))
   }

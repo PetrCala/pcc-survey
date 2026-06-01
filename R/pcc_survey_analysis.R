@@ -32,6 +32,7 @@ get_pcc_survey_metaflavours <- function(df, re_method = "ML", re_method_fishers_
     uwls3 = uwls3(df),
     hsma = hsma(df),
     fishers_z = fishers_z(df, method = re_method_fishers_z),
+    uwlsz = uwls_fishers_z(df),
     waiv2 = waiv2(df)
   )
 
@@ -46,6 +47,24 @@ get_pcc_survey_metaflavours <- function(df, re_method = "ML", re_method_fishers_
   estimator_values <- vapply(estimator_cols, function(col) results[[col]], FUN.VALUE = numeric(1))
   stopifnot(all(!is.na(estimator_values)))
   results$row_mean <- mean(estimator_values)
+
+  # Per-MA heterogeneity statistics (item 1). tau2 from the RE fits; gamma (the
+  # multiplicative variance) from the UWLS fits, computed on both the S1 and S2
+  # standard-error variants. Q and I2 are reported both from the RE fits and as
+  # derived from UWLS gamma, pending confirmation of which family the manuscript
+  # keeps (the two definitions differ slightly).
+  results$tau2_re1 <- methods$re1$tau2
+  results$tau2_re2 <- methods$re2$tau2
+  results$gamma_uwls1 <- methods$uwls1$gamma
+  results$gamma_uwls2 <- methods$uwls2$gamma
+  results$q_re1 <- methods$re1$Q
+  results$i2_re1 <- methods$re1$I2
+  results$q_re2 <- methods$re2$Q
+  results$i2_re2 <- methods$re2$I2
+  results$q_uwls1 <- methods$uwls1$Q
+  results$i2_uwls1 <- methods$uwls1$I2
+  results$q_uwls2 <- methods$uwls2$Q
+  results$i2_uwls2 <- methods$uwls2$I2
 
   sum_stats <- pcc_sum_stats(df, log_results = FALSE)
   results <- c(results, sum_stats)
@@ -102,12 +121,18 @@ pcc_survey_analyse <- function(config, data_dir = "data") {
   log_dataframe_info(df = pcc_df, colnames_to_analyse = c("study", "meta"))
 
   # Convert inverse relationships for comparability (if enabled)
+  flipped_metas <- character(0)
   if (is.null(config$cleaning$convert_inverse_relationships) || config$cleaning$convert_inverse_relationships) {
     pcc_df <- convert_inverse_relationships(pcc_df, log_results = TRUE)
+    flipped_metas <- attr(pcc_df, "flipped_metas")
+    if (is.null(flipped_metas)) flipped_metas <- character(0)
   }
 
   # Compute all derived quantities (S1/S2 SE, Fisher's Z, PCC3, etc.)
   pcc_df <- compute_derived_quantities(pcc_df)
+
+  # Build the combined study-level dataset for the aggregate FAT-PET panel (item 3)
+  combined_dataset <- build_combined_dataset(pcc_df)
 
   # Calculate flavours for each meta-analysis
   get_flavours <- function() {
@@ -131,7 +156,31 @@ pcc_survey_analyse <- function(config, data_dir = "data") {
     colnames(pcc_df_out)[1] <- "idx"
   }
 
+  # Sign-flip flag (item 5): mark MAs whose effects were flipped for alignment.
+  pcc_df_out$flipped <- pcc_df_out$meta %in% flipped_metas
+  logger::log_info(paste("Sign alignment: flagged", sum(pcc_df_out$flipped), "of",
+                         nrow(pcc_df_out), "meta-analyses as flipped."))
+
+  # Attach the combined study-level dataset (item 3) for the runner to save.
+  attr(pcc_df_out, "combined_dataset") <- combined_dataset
+
   pcc_df_out
+}
+
+# Map estimator column names (ending in "_est") to human-readable labels.
+# Shared by calculate_estimator_summary() and calculate_smallest_estimate_counts().
+estimator_display_names <- function() {
+  c(
+    "re1_est" = "RE1",
+    "re2_est" = "RE2",
+    "uwls1_est" = "UWLS1",
+    "uwls2_est" = "UWLS2",
+    "uwls3_est" = "UWLS3",
+    "hsma_est" = "HSMA",
+    "fishers_z_est" = "Fisher's z",
+    "uwlsz_est" = "UWLSz",
+    "waiv2_est" = "WAIV2"
+  )
 }
 
 #' Calculate estimator summary statistics across meta-analyses
@@ -156,16 +205,7 @@ calculate_estimator_summary <- function(results_df) {
   }
 
   # Map column names to readable estimator names
-  estimator_names <- c(
-    "re1_est" = "RE1",
-    "re2_est" = "RE2",
-    "uwls1_est" = "UWLS1",
-    "uwls2_est" = "UWLS2",
-    "uwls3_est" = "UWLS3",
-    "hsma_est" = "HSMA",
-    "fishers_z_est" = "Fisher's z",
-    "waiv2_est" = "WAIV2"
-  )
+  estimator_names <- estimator_display_names()
 
   # Helper function to calculate skewness
   calculate_skewness <- function(x) {
@@ -262,4 +302,96 @@ calculate_estimator_summary <- function(results_df) {
   }
 
   summary_df
+}
+
+#' Count how often each estimator gives the smallest (most conservative) estimate
+#'
+#' Across the individual meta-analyses (excludes any "All meta-analyses" row),
+#' tallies for each estimator (a) how often it is the smallest *signed* estimate
+#' within its meta-analysis and (b) how often it is negative. Effects are assumed
+#' already sign-aligned (see [convert_inverse_relationships()]), so the smallest
+#' signed estimate is the most conservative. Framed as "most conservative", not
+#' "least biased". Ties (estimators equal to the row minimum) are counted for each
+#' tied estimator, so `times_smallest` can sum to slightly more than `n_metas`.
+#'
+#' @param results_df [data.frame] Results from pcc_survey_analyse() with estimator
+#'   columns ending in "_est".
+#' @return [data.frame] Columns: estimator, times_smallest, times_negative, n_metas.
+#' @export
+calculate_smallest_estimate_counts <- function(results_df) {
+  # Filter out "All meta-analyses" row
+  individual_metas <- results_df[results_df$meta != "All meta-analyses", ]
+
+  # Get estimator columns (columns ending with _est) - excludes row_mean
+  estimator_cols <- grep("_est$", colnames(individual_metas), value = TRUE)
+  if (length(estimator_cols) == 0) {
+    cli::cli_abort("No estimator columns found (columns ending with '_est')")
+  }
+
+  estimator_names <- estimator_display_names()
+  est_matrix <- as.matrix(individual_metas[, estimator_cols, drop = FALSE])
+  n_metas <- nrow(est_matrix)
+
+  times_smallest <- stats::setNames(integer(length(estimator_cols)), estimator_cols)
+  for (i in seq_len(n_metas)) {
+    row_vals <- est_matrix[i, ]
+    if (all(is.na(row_vals))) next
+    row_min <- min(row_vals, na.rm = TRUE)
+    is_smallest <- !is.na(row_vals) & row_vals == row_min
+    times_smallest[is_smallest] <- times_smallest[is_smallest] + 1L
+  }
+
+  times_negative <- vapply(estimator_cols, function(col) {
+    vals <- individual_metas[[col]]
+    sum(!is.na(vals) & vals < 0)
+  }, integer(1))
+
+  readable <- vapply(estimator_cols, function(col) {
+    if (col %in% names(estimator_names)) estimator_names[[col]] else col
+  }, character(1))
+
+  data.frame(
+    estimator = unname(readable),
+    times_smallest = as.integer(times_smallest),
+    times_negative = as.integer(times_negative),
+    n_metas = as.integer(n_metas),
+    row.names = NULL,
+    stringsAsFactors = FALSE
+  )
+}
+
+#' Build the combined study-level dataset across all meta-analyses
+#'
+#' Produces one row per PCC observation with an `idx` identifying its
+#' meta-analysis (1..N in alphabetical meta order). The `idx` matches the `idx`
+#' of the per-MA summary produced by [pcc_survey_analyse()], which orders
+#' meta-analyses via `split(pcc_df, pcc_df$meta)` (alphabetical), so the two
+#' files align row-for-MA. Intended for an aggregate FAT-PET panel model.
+#'
+#' @param pcc_df [data.frame] Per-observation PCC data after
+#'   [compute_derived_quantities()]. Needs columns: meta, study, effect, se_s1,
+#'   sample_size.
+#' @return [data.frame] Columns: idx, meta, study, effect, se, sample_size.
+#' @export
+build_combined_dataset <- function(pcc_df) {
+  required <- c("meta", "study", "effect", "se_s1", "sample_size")
+  missing_cols <- setdiff(required, colnames(pcc_df))
+  if (length(missing_cols) > 0) {
+    cli::cli_abort("build_combined_dataset is missing required columns: {.val {missing_cols}}")
+  }
+
+  meta_chr <- as.character(pcc_df$meta)
+  meta_levels <- sort(unique(meta_chr))
+  idx <- match(meta_chr, meta_levels)
+
+  data.frame(
+    idx = idx,
+    meta = meta_chr,
+    study = as.character(pcc_df$study),
+    effect = pcc_df$effect,
+    se = pcc_df$se_s1,
+    sample_size = pcc_df$sample_size,
+    row.names = NULL,
+    stringsAsFactors = FALSE
+  )
 }

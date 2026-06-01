@@ -49,6 +49,8 @@ pcc_se_s2 <- function(df) {
 #' @param effect [vector] The vector of effects. If not provided, defaults to df$effect.
 #' @param se [vector] The vector of SEs. If not provided, defaults to df$se.
 #' @param method [character] The method to use for the RE calculation. Defaults to "ML".
+#' @return [list] A list with properties "est", "t_value", and the heterogeneity
+#'   statistics "tau2" (heterogeneity variance), "Q" (Cochran's Q) and "I2".
 #' @export
 re <- function(df, effect = NULL, se = NULL, method = "ML") {
   if (is.null(effect)) effect <- df$effect
@@ -76,7 +78,13 @@ re <- function(df, effect = NULL, se = NULL, method = "ML") {
   re_se <- re_$se[1]
   re_t_value <- re_est / re_se
 
-  list(est = re_est, t_value = re_t_value)
+  list(
+    est = re_est,
+    t_value = re_t_value,
+    tau2 = as.numeric(re_$tau2),
+    Q = as.numeric(re_$QE),
+    I2 = as.numeric(re_$I2)
+  )
 }
 
 #' Calculate UWLS
@@ -87,7 +95,10 @@ re <- function(df, effect = NULL, se = NULL, method = "ML") {
 #' @param df [data.frame] The data frame on which to run the calculation
 #' @param effect [vector] The vector of effects. If not provided, defaults to df$effect.
 #' @param se [vector] The vector of SEs. If not provided, defaults to df$se.
-#' @return [list] A list with properties "est", "t_value".
+#' @return [list] A list with properties "est", "t_value", and the heterogeneity
+#'   statistics "gamma" (multiplicative variance), "Q" = (k - 1) * gamma and
+#'   "I2" = max(0, 1 - 1 / gamma) * 100 (a percentage, matching metafor's I2
+#'   scale). The heterogeneity statistics are NA when k < 2.
 #' @export
 uwls <- function(df, effect = NULL, se = NULL) {
   if (is.null(effect)) effect <- df$effect
@@ -106,7 +117,21 @@ uwls <- function(df, effect = NULL, se = NULL) {
   est <- summary_uwls$coefficients[1, "Estimate"]
   t_value <- summary_uwls$coefficients[1, "t value"]
 
-  list(est = est, t_value = t_value)
+  # Multiplicative variance (gamma): residual variance of the WLS fit. With one
+  # parameter and k observations the residual df is k - 1, so gamma is only
+  # defined for k >= 2. Q and I2 follow from gamma per the UWLS decomposition.
+  k <- nrow(df_model)
+  if (k >= 2) {
+    gamma <- summary_uwls$sigma^2
+    Q <- (k - 1) * gamma
+    I2 <- max(0, 1 - 1 / gamma) * 100
+  } else {
+    gamma <- NA_real_
+    Q <- NA_real_
+    I2 <- NA_real_
+  }
+
+  list(est = est, t_value = t_value, gamma = gamma, Q = Q, I2 = I2)
 }
 
 
@@ -225,6 +250,32 @@ fishers_z <- function(df, method = "ML") {
   re_z <- (exp(2 * re_est) - 1) / (exp(2 * re_est) + 1)
 
   list(est = re_z, t_value = re_t_value)
+}
+
+#' Calculate UWLS on Fisher's z (UWLSz)
+#'
+#' UWLS analog of `fishers_z()` (which is RE on Fisher's z): applies UWLS to the
+#' Fisher's-z-transformed effects and back-transforms the estimate to the PCC scale.
+#'
+#' Uses pre-computed fishers_z and fishers_z_se columns from
+#' compute_derived_quantities(). Assumes all inputs are valid.
+#' Use validate_pcc_observations() to ensure this before calling.
+#'
+#' @param df [data.frame] The data frame with pre-computed 'fishers_z' and 'fishers_z_se' columns
+#' @return [list] A list with properties "est", "t_value"
+#' @export
+uwls_fishers_z <- function(df) {
+  stopifnot("fishers_z" %in% colnames(df))
+  stopifnot("fishers_z_se" %in% colnames(df))
+
+  uwls_list <- uwls(df, effect = df$fishers_z, se = df$fishers_z_se)
+  uwls_est <- uwls_list$est
+  uwls_t_value <- uwls_list$t_value
+
+  # Convert back from Fisher's Z to PCC
+  uwls_z <- (exp(2 * uwls_est) - 1) / (exp(2 * uwls_est) + 1)
+
+  list(est = uwls_z, t_value = uwls_t_value)
 }
 
 #' Calculate various summary statistics associated with the PCC data frame
