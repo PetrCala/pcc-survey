@@ -9,6 +9,7 @@ test_that("calculate_psb_measures returns all required measures", {
     study = c("study1", "study2", "study3"),
     dof = c(43, 93, 143)
   )
+  df <- add_pcc_derived(df)
 
   uwls_estimate <- 0.2
   tau2 <- get_re1_tau2(df)
@@ -36,6 +37,7 @@ test_that("calculate_psb_measures calculates correctly", {
     study = c("study1", "study2", "study3"),
     dof = c(43, 93, 143)
   )
+  df <- add_pcc_derived(df)
 
   uwls_estimate <- 0.2
   tau2 <- get_re1_tau2(df)
@@ -52,7 +54,7 @@ test_that("calculate_psb_measures calculates correctly", {
   expect_equal(measures$k, n_total)
 })
 
-test_that("calculate_psb_measures handles NA uwls_estimate", {
+test_that("calculate_psb_measures errors on NA uwls_estimate", {
   df <- data.frame(
     effect = c(0.1, 0.2, 0.3),
     se = c(0.1, 0.1, 0.1),
@@ -61,13 +63,12 @@ test_that("calculate_psb_measures handles NA uwls_estimate", {
     study = c("study1", "study2", "study3"),
     dof = c(43, 93, 143)
   )
+  df <- add_pcc_derived(df)
 
   tau2 <- get_re1_tau2(df)
-  if (is.na(tau2)) tau2 <- 0.0 # Fallback for test
-  measures <- calculate_psb_measures(df, "test_method", NA_real_, tau2)
 
-  # All measures should be NA
-  expect_true(all(sapply(measures, is.na)))
+  # calculate_psb_measures requires a non-NA uwls_estimate
+  expect_error(calculate_psb_measures(df, "test_method", NA_real_, tau2))
 })
 
 test_that("get_psb_metaflavours returns data frame with correct structure", {
@@ -80,6 +81,7 @@ test_that("get_psb_metaflavours returns data frame with correct structure", {
     sample_size = c(50, 100, 150),
     dof = c(43, 93, 143)
   )
+  df <- add_pcc_derived(df)
 
   result <- get_psb_metaflavours(df)
 
@@ -112,6 +114,7 @@ test_that("get_psb_metaflavours calculates measures for all three methods", {
     sample_size = c(50, 100, 150),
     dof = c(43, 93, 143)
   )
+  df <- add_pcc_derived(df)
 
   result <- get_psb_metaflavours(df)
 
@@ -131,6 +134,7 @@ test_that("get_psb_metaflavours includes observed values", {
     sample_size = c(50, 100, 150),
     dof = c(43, 93, 143)
   )
+  df <- add_pcc_derived(df)
 
   result <- get_psb_metaflavours(df)
 
@@ -156,6 +160,7 @@ test_that("get_psb_metaflavours includes expected values for each method", {
     sample_size = c(50, 100, 150),
     dof = c(43, 93, 143)
   )
+  df <- add_pcc_derived(df)
 
   result <- get_psb_metaflavours(df)
 
@@ -175,6 +180,7 @@ test_that("get_psb_metaflavours errors on multiple meta-analyses", {
     sample_size = c(50, 100, 150),
     dof = c(43, 93, 143)
   )
+  df <- add_pcc_derived(df)
 
   expect_error(get_psb_metaflavours(df), "Expected exactly one unique meta-analysis name")
 })
@@ -189,6 +195,7 @@ test_that("get_psb_metaflavours handles custom alpha", {
     sample_size = c(50, 100, 150),
     dof = c(43, 93, 143)
   )
+  df <- add_pcc_derived(df)
 
   result_05 <- get_psb_metaflavours(df, alpha = 0.05)
   result_01 <- get_psb_metaflavours(df, alpha = 0.01)

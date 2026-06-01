@@ -92,7 +92,7 @@ test_that("calculate_study_power handles custom se vector", {
   expect_length(power_custom, 3)
 })
 
-test_that("calculate_study_power handles NA values", {
+test_that("calculate_study_power errors on NA se", {
   df <- data.frame(
     effect = c(0.1, 0.2, 0.3),
     se = c(0.1, NA_real_, 0.1),
@@ -101,31 +101,23 @@ test_that("calculate_study_power handles NA values", {
   )
 
   mean_effect <- 0.2
-  power <- calculate_study_power(df, mean_effect)
 
-  # Should handle NA in se
-  expect_length(power, 3)
-  expect_true(is.na(power[2]))
-  expect_true(is.numeric(power[1]) && !is.na(power[1]))
-  expect_true(is.numeric(power[3]) && !is.na(power[3]))
+  # calculate_study_power requires finite, positive SE
+  expect_error(calculate_study_power(df, mean_effect))
 })
 
-test_that("calculate_study_power handles infinite values", {
+test_that("calculate_study_power errors on non-positive se", {
   df <- data.frame(
     effect = c(0.1, 0.2, 0.3),
-    se = c(0.1, 0.0, 0.1), # Zero SE causes infinite lambda
+    se = c(0.1, 0.0, 0.1), # Zero SE is not allowed
     meta = "test_meta",
     study = c("study1", "study2", "study3")
   )
 
   mean_effect <- 0.2
-  power <- calculate_study_power(df, mean_effect)
 
-  # Should handle infinite lambda gracefully
-  expect_length(power, 3)
-  # When lambda is infinite (se = 0), power calculation gives 1.0 (perfect power)
-  # This is correct: with infinite non-centrality parameter, we always detect the effect
-  expect_equal(power[2], 1.0, tolerance = 1e-6)
+  # calculate_study_power requires finite, positive SE
+  expect_error(calculate_study_power(df, mean_effect))
 })
 
 test_that("calculate_study_power validates inputs", {
