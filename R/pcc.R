@@ -289,7 +289,7 @@ uwls_fishers_z <- function(df) {
 #'
 #' @param df [data.frame] The data frame with an 'effect' column
 #' @param effect [vector] The vector of effects. If not provided, defaults to df$effect.
-#' @return [list] A list with properties "est" and "t_value".
+#' @return [list] A list with properties "est", "se" and "t_value".
 #' @export
 simple_mean <- function(df, effect = NULL) {
   if (is.null(effect)) effect <- df$effect
@@ -297,11 +297,12 @@ simple_mean <- function(df, effect = NULL) {
 
   k <- length(effect)
   est <- mean(effect)
-  # sd() is NA for a single observation, in which case the t-value is undefined.
+  # sd() is NA for a single observation, in which case the SE and t-value are
+  # undefined.
   se <- stats::sd(effect) / sqrt(k)
   t_value <- if (is.na(se) || se == 0) NA_real_ else est / se
 
-  list(est = est, t_value = t_value)
+  list(est = est, se = se, t_value = t_value)
 }
 
 #' Calculate the conditional FAT-PET-PEESE for one meta-analysis

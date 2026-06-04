@@ -42,6 +42,10 @@ get_pcc_survey_metaflavours <- function(df, re_method = "ML", re_method_fishers_
     results[[paste0(method, "_t_value")]] <- res$t_value
   }
 
+  # Explicit SE of the simple mean (sd(effect)/sqrt(k)); recoverable from the
+  # t-value but surfaced as its own column at the co-authors' request.
+  results$simple_mean_se <- methods$simple_mean$se
+
   # Per-MA heterogeneity statistics (item 1). tau2 from the RE fits; gamma (the
   # multiplicative variance) from the UWLS fits, computed on both the S1 and S2
   # standard-error variants. Q and I2 are reported both from the RE fits and as
