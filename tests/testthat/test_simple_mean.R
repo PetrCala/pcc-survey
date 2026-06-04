@@ -8,12 +8,14 @@ test_that("simple_mean returns the unweighted mean with SD/sqrt(k) SE", {
   expect_equal(res$est, mean(effs))
 
   expected_se <- stats::sd(effs) / sqrt(length(effs))
+  expect_equal(res$se, expected_se)
   expect_equal(res$t_value, mean(effs) / expected_se)
 })
 
-test_that("simple_mean t_value is NA for a single observation", {
+test_that("simple_mean se and t_value are NA for a single observation", {
   res <- simple_mean(data.frame(effect = 0.3))
   expect_equal(res$est, 0.3)
+  expect_true(is.na(res$se))
   expect_true(is.na(res$t_value))
 })
 

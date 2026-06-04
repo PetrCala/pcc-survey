@@ -18,9 +18,9 @@
 
 ### Changed (RSM revision follow-up)
 - Added the simple unweighted mean (`simple_mean()`, labelled "Simple mean") as the
-  OLS comparison estimator requested by the reviewers; SE = sd(effect)/sqrt(k). It
-  appears in the per-MA results, the estimator summary (Table 1), and the
-  smallest-estimate counts.
+  OLS comparison estimator requested by the reviewers; SE = sd(effect)/sqrt(k),
+  reported explicitly as the `simple_mean_se` column. It appears in the per-MA
+  results, the estimator summary (Table 1), and the smallest-estimate counts.
 - Added per-MA conditional FAT-PET-PEESE (`fat_pet_peese()`) on the S1 SE: columns
   `petpeese`, `petpeese_se`, `petpeese_type` ("PET"/"PEESE") plus the FAT (Egger)
   coefficient `fat`/`fat_se`. One-sided PET decision at alpha = 0.1. Reported as a
