@@ -278,6 +278,93 @@ uwls_fishers_z <- function(df) {
   list(est = uwls_z, t_value = uwls_t_value)
 }
 
+#' Calculate the simple unweighted mean (OLS)
+#'
+#' The simple, unweighted average of the effects. This is the OLS estimate of a
+#' constant-only model, which is what the reviewers asked to compare against. Its
+#' standard error is sd(effect) / sqrt(k), so t = mean / (sd / sqrt(k)).
+#'
+#' Assumes all inputs are valid. Use validate_pcc_observations() to ensure this
+#' before calling.
+#'
+#' @param df [data.frame] The data frame with an 'effect' column
+#' @param effect [vector] The vector of effects. If not provided, defaults to df$effect.
+#' @return [list] A list with properties "est", "se" and "t_value".
+#' @export
+simple_mean <- function(df, effect = NULL) {
+  if (is.null(effect)) effect <- df$effect
+  stopifnot(all(!is.na(effect) & is.finite(effect)))
+
+  k <- length(effect)
+  est <- mean(effect)
+  # sd() is NA for a single observation, in which case the SE and t-value are
+  # undefined.
+  se <- stats::sd(effect) / sqrt(k)
+  t_value <- if (is.na(se) || se == 0) NA_real_ else est / se
+
+  list(est = est, se = se, t_value = t_value)
+}
+
+#' Calculate the conditional FAT-PET-PEESE for one meta-analysis
+#'
+#' Fits the FAT-PET meta-regression by WLS (weights 1 / se^2):
+#'   PET:   effect_i = b0 + b1 * se_i   + e_i
+#'   PEESE: effect_i = b0 + b1 * se_i^2 + e_i
+#' In the PET fit the intercept b0 is the precision-effect (publication-bias-
+#' corrected) estimate and the slope b1 is the FAT (Egger) coefficient. The
+#' conditional rule (Stanley & Doucouliagos): test the PET estimate one-sided at
+#' `alpha` (H1: effect > 0; effects are assumed sign-aligned positive via
+#' convert_inverse_relationships()). If the PET estimate is significant, report
+#' the PEESE estimate; otherwise report the PET estimate. Reported as a
+#' "publication-bias-corrected benchmark", not "grounded truth".
+#'
+#' Needs at least 3 observations (the WLS fit has 2 parameters); returns NA
+#' otherwise.
+#'
+#' @param df [data.frame] The data frame with an 'effect' column.
+#' @param se [vector] Standard errors. If not provided, defaults to df$se_s1.
+#' @param alpha [numeric] One-sided significance level for the PET decision (default 0.1).
+#' @return [list] est (conditional PET-PEESE estimate), se, type ("PET" or
+#'   "PEESE"), fat (FAT/Egger slope from the PET fit) and fat_se. All NA when k < 3.
+#' @export
+fat_pet_peese <- function(df, se = NULL, alpha = 0.1) {
+  effect <- df$effect
+  if (is.null(se)) se <- df$se_s1
+  stopifnot(length(effect) == length(se))
+  stopifnot(all(!is.na(effect) & is.finite(effect)))
+  stopifnot(all(!is.na(se) & is.finite(se) & se > 0))
+
+  k <- length(effect)
+  if (k < 3) {
+    return(list(est = NA_real_, se = NA_real_, type = NA_character_,
+                fat = NA_real_, fat_se = NA_real_))
+  }
+
+  dm <- data.frame(effect = effect, se = se, w = 1 / se^2)
+
+  # PET: intercept = corrected estimate, slope on se = FAT (Egger) coefficient.
+  pet <- stats::lm(effect ~ se, weights = w, data = dm)
+  pet_coef <- summary(pet)$coefficients
+  pet_est <- pet_coef[1, "Estimate"]
+  pet_se <- pet_coef[1, "Std. Error"]
+  fat <- pet_coef[2, "Estimate"]
+  fat_se <- pet_coef[2, "Std. Error"]
+
+  # One-sided PET decision (H1: effect > 0), residual df = k - 2.
+  pet_t <- pet_est / pet_se
+  p_one_sided <- stats::pt(pet_t, df = k - 2, lower.tail = FALSE)
+  use_peese <- !is.na(p_one_sided) && p_one_sided < alpha
+
+  if (use_peese) {
+    peese <- stats::lm(effect ~ I(se^2), weights = w, data = dm)
+    peese_coef <- summary(peese)$coefficients
+    list(est = peese_coef[1, "Estimate"], se = peese_coef[1, "Std. Error"],
+         type = "PEESE", fat = fat, fat_se = fat_se)
+  } else {
+    list(est = pet_est, se = pet_se, type = "PET", fat = fat, fat_se = fat_se)
+  }
+}
+
 #' Calculate various summary statistics associated with the PCC data frame
 #'
 #' Uses pre-computed sample_size column. Assumes all inputs are valid.
@@ -294,24 +381,14 @@ pcc_sum_stats <- function(df, log_results = TRUE) {
   n_ <- df$sample_size
   stopifnot(all(!is.na(n_)))
 
-  quantiles <- stats::quantile(n_, probs = c(0.25, 0.75))
-
-  get_ss_lt <- function(lt) {
-    sum(n_ < lt) / k_
-  }
-
+  # Only the descriptives used in the paper are kept (k, average and median
+  # sample size) for the simulation-vs-survey comparison. The sample-size
+  # quantiles and ss_lt_* shares were exploratory and were dropped at the
+  # co-authors' request.
   res <- list(
     k_ = k_,
     avg_n = mean(n_),
-    median_n = stats::median(n_),
-    quantile_1_n = as.numeric(quantiles[1]),
-    quantile_3_n = as.numeric(quantiles[2]),
-    ss_lt_50 = get_ss_lt(50),
-    ss_lt_100 = get_ss_lt(100),
-    ss_lt_200 = get_ss_lt(200),
-    ss_lt_400 = get_ss_lt(400),
-    ss_lt_1600 = get_ss_lt(1600),
-    ss_lt_3200 = get_ss_lt(3200)
+    median_n = stats::median(n_)
   )
 
   if (log_results) {

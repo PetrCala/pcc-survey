@@ -33,7 +33,7 @@ get_pcc_survey_metaflavours <- function(df, re_method = "ML", re_method_fishers_
     hsma = hsma(df),
     fishers_z = fishers_z(df, method = re_method_fishers_z),
     uwlsz = uwls_fishers_z(df),
-    waiv2 = waiv2(df)
+    simple_mean = simple_mean(df)
   )
 
   for (method in names(methods)) {
@@ -42,11 +42,9 @@ get_pcc_survey_metaflavours <- function(df, re_method = "ML", re_method_fishers_
     results[[paste0(method, "_t_value")]] <- res$t_value
   }
 
-  # Calculate row_mean: simple unadjusted average of all estimator columns
-  estimator_cols <- paste0(names(methods), "_est")
-  estimator_values <- vapply(estimator_cols, function(col) results[[col]], FUN.VALUE = numeric(1))
-  stopifnot(all(!is.na(estimator_values)))
-  results$row_mean <- mean(estimator_values)
+  # Explicit SE of the simple mean (sd(effect)/sqrt(k)); recoverable from the
+  # t-value but surfaced as its own column at the co-authors' request.
+  results$simple_mean_se <- methods$simple_mean$se
 
   # Per-MA heterogeneity statistics (item 1). tau2 from the RE fits; gamma (the
   # multiplicative variance) from the UWLS fits, computed on both the S1 and S2
@@ -65,6 +63,16 @@ get_pcc_survey_metaflavours <- function(df, re_method = "ML", re_method_fishers_
   results$i2_uwls1 <- methods$uwls1$I2
   results$q_uwls2 <- methods$uwls2$Q
   results$i2_uwls2 <- methods$uwls2$I2
+
+  # Conditional FAT-PET-PEESE on the S1 SE: the publication-bias-corrected
+  # benchmark plus the FAT (Egger) coefficient. Stored as plain columns (no
+  # "_est" suffix) so they stay out of Table 1 and the smallest-estimate counts.
+  fpp <- fat_pet_peese(df, se = df$se_s1, alpha = 0.1)
+  results$petpeese <- fpp$est
+  results$petpeese_se <- fpp$se
+  results$petpeese_type <- fpp$type
+  results$fat <- fpp$fat
+  results$fat_se <- fpp$fat_se
 
   sum_stats <- pcc_sum_stats(df, log_results = FALSE)
   results <- c(results, sum_stats)
@@ -179,7 +187,7 @@ estimator_display_names <- function() {
     "hsma_est" = "HSMA",
     "fishers_z_est" = "Fisher's z",
     "uwlsz_est" = "UWLSz",
-    "waiv2_est" = "WAIV2"
+    "simple_mean_est" = "Simple mean"
   )
 }
 
