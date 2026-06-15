@@ -74,11 +74,16 @@ replicate:
 	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup'); devtools::load_all('.'); if (exists('check_data_availability')) { check_data_availability() } else { cat('Data check function not yet implemented\\n') }"
 	@echo "Step 3: Running analysis..."
 	@cd "$(PROJECT_DIR)" && $(MAKE) run
+	@echo "Step 4: Running publication-selection-bias (ESS) analysis..."
+	@cd "$(PROJECT_DIR)" && $(MAKE) run-psb
 	@echo "=== Replication workflow completed successfully ==="
 	@echo ""
 	@echo "Results are available in:"
 	@echo "  - $(PROJECT_DIR)/output/pcc_survey_results.csv (main analysis results)"
-	@echo "  - $(PROJECT_DIR)/output/estimator_summary.csv (estimator summary statistics)"
+	@echo "  - $(PROJECT_DIR)/output/estimator_summary.csv (Table 1 estimator summary)"
+	@echo "  - $(PROJECT_DIR)/output/smallest_estimate_counts.csv (most-conservative counts)"
+	@echo "  - $(PROJECT_DIR)/output/pcc_combined_dataset.csv (study-level FAT-PET panel)"
+	@echo "  - $(PROJECT_DIR)/output/psb_results.csv (ESS / publication-selection bias)"
 	@echo "  - $(PROJECT_DIR)/output/session_info.txt (session information for reproducibility)"
 	@echo "  - $(PROJECT_DIR)/logs/ (timestamped log files)"
 
@@ -86,13 +91,13 @@ zip:
 	@cd "$(PROJECT_DIR)" && \
 	ZIP_NAME="pcc-survey-results-$$(date +%y-%m-%d).zip" && \
 	rm -f "$$ZIP_NAME" && \
-	(for f in output/pcc_survey_results.csv output/estimator_summary.csv output/psb_results.csv output/session_info.txt; do \
+	(for f in output/pcc_survey_results.csv output/estimator_summary.csv output/smallest_estimate_counts.csv output/pcc_combined_dataset.csv output/psb_results.csv output/session_info.txt; do \
 	  if [ ! -f "$$f" ]; then echo "Warning: $$f is missing"; fi; \
 	done) && \
 	LATEST_LOG=$$(ls -t logs/*.log 2>/dev/null | head -1) && \
 	if [ -z "$$LATEST_LOG" ]; then echo "Warning: no log file found in logs/"; fi && \
 	ZIP_FILES="" && \
-	for f in output/pcc_survey_results.csv output/estimator_summary.csv output/psb_results.csv output/session_info.txt; do \
+	for f in output/pcc_survey_results.csv output/estimator_summary.csv output/smallest_estimate_counts.csv output/pcc_combined_dataset.csv output/psb_results.csv output/session_info.txt; do \
 	  [ -f "$$f" ] && ZIP_FILES="$$ZIP_FILES $$f"; \
 	done && \
 	[ -n "$$LATEST_LOG" ] && ZIP_FILES="$$ZIP_FILES $$LATEST_LOG"; \
