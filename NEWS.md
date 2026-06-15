@@ -5,9 +5,9 @@
 ### Added (RSM revision)
 - UWLSz estimator: UWLS on the Fisher's z scale (`uwls_fishers_z()`), included in
   the per-MA results and the estimator summary (Table 1).
-- Per-MA heterogeneity statistics in the main results: `tau2` (from RE1/RE2),
-  `gamma` (UWLS multiplicative variance, UWLS1/UWLS2), and `Q`/`I2` reported both
-  from the RE fits and as derived from UWLS gamma, on both the S1 and S2 SEs.
+- Per-MA heterogeneity statistics in the main results, all on the S2 (Eq. 3)
+  sampling-error variance: `tau2_re2` (from RE2) and `gamma_uwls2`, `q_uwls2`,
+  `i2_uwls2` (from UWLS2).
 - `build_combined_dataset()` writes a combined study-level dataset
   (`pcc_combined_dataset.csv`) with an `idx` aligned to the per-MA summary, for an
   aggregate FAT-PET panel model.
@@ -17,7 +17,7 @@
   sign-aligned (median PCC negative), with the count logged.
 
 ### Changed (RSM revision follow-up)
-- Added the simple unweighted mean (`simple_mean()`, labelled "Simple mean") as the
+- Added the simple unweighted mean (`simple_mean()`, labelled "Mean") as the
   OLS comparison estimator requested by the reviewers; SE = sd(effect)/sqrt(k),
   reported explicitly as the `simple_mean_se` column. It appears in the per-MA
   results, the estimator summary (Table 1), and the smallest-estimate counts.
@@ -32,6 +32,21 @@
 - Dropped the exploratory sample-size descriptives `quantile_1_n`, `quantile_3_n`
   and `ss_lt_50/100/200/400/1600/3200` from `pcc_sum_stats()`; `k_`, `avg_n` and
   `median_n` are kept for the simulation-vs-survey comparison.
+
+### Changed (RSM revision follow-up 2)
+- Reduced the per-MA heterogeneity statistics to the S2 (Eq. 3) "correct"
+  sampling-error variants: `tau2_re2` from RE2 and `gamma_uwls2`, `q_uwls2`,
+  `i2_uwls2` from UWLS2. The S1 variants and the RE-based `Q`/`I2` were dropped
+  at the co-authors' request.
+- Included PET-PEESE ("PP") as a column in the estimator summary (Table 1); it
+  remains excluded from the smallest-estimate counts.
+- Relabelled and reordered the Table 1 estimators to match the co-authors' table:
+  Mean, RE1, RE2, UWLS1, UWLS2, UWLS+3, HS, REz, UWLSz, PP ("Simple mean" ->
+  "Mean", "UWLS3" -> "UWLS+3", "HSMA" -> "HS", "Fisher's z" -> "REz").
+- `make replicate` now also runs the PSB/ESS analysis, and `make zip` bundles
+  `psb_results.csv` (ESS), `smallest_estimate_counts.csv` and
+  `pcc_combined_dataset.csv` alongside the results, Table 1, and the PET-PEESE /
+  FAT columns.
 
 ### Added
 - Initial release of pccsurvey package

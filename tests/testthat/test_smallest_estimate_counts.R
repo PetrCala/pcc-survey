@@ -17,7 +17,7 @@ test_that("calculate_smallest_estimate_counts tallies smallest signed and negati
 
   expect_equal(res[res$estimator == "UWLS1", ]$times_smallest, 0L)
   expect_equal(res[res$estimator == "UWLS1", ]$times_negative, 0L)
-  expect_equal(res[res$estimator == "HSMA", ]$times_smallest, 0L)
+  expect_equal(res[res$estimator == "HS", ]$times_smallest, 0L)
 
   expect_true(all(res$n_metas == 3L))
 })
@@ -48,7 +48,7 @@ test_that("calculate_smallest_estimate_counts counts ties for each tied estimato
 
   expect_equal(res[res$estimator == "RE1", ]$times_smallest, 1L)
   expect_equal(res[res$estimator == "UWLS1", ]$times_smallest, 1L)
-  expect_equal(res[res$estimator == "HSMA", ]$times_smallest, 0L)
+  expect_equal(res[res$estimator == "HS", ]$times_smallest, 0L)
 })
 
 test_that("calculate_smallest_estimate_counts errors when no estimator columns", {

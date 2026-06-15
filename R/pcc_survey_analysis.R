@@ -46,21 +46,13 @@ get_pcc_survey_metaflavours <- function(df, re_method = "ML", re_method_fishers_
   # t-value but surfaced as its own column at the co-authors' request.
   results$simple_mean_se <- methods$simple_mean$se
 
-  # Per-MA heterogeneity statistics (item 1). tau2 from the RE fits; gamma (the
-  # multiplicative variance) from the UWLS fits, computed on both the S1 and S2
-  # standard-error variants. Q and I2 are reported both from the RE fits and as
-  # derived from UWLS gamma, pending confirmation of which family the manuscript
-  # keeps (the two definitions differ slightly).
-  results$tau2_re1 <- methods$re1$tau2
+  # Per-MA heterogeneity statistics, all on the S2 (Eq. 3) sampling-error
+  # variance the co-authors consider correct: tau2 from the RE2 fit, and gamma
+  # (multiplicative variance), Q and I2 from the UWLS2 fit -- which are mutually
+  # consistent since UWLS Q and I2 are both derived from the same gamma. (RSM
+  # revision; the S1 variants and the RE-based Q/I2 were dropped at their request.)
   results$tau2_re2 <- methods$re2$tau2
-  results$gamma_uwls1 <- methods$uwls1$gamma
   results$gamma_uwls2 <- methods$uwls2$gamma
-  results$q_re1 <- methods$re1$Q
-  results$i2_re1 <- methods$re1$I2
-  results$q_re2 <- methods$re2$Q
-  results$i2_re2 <- methods$re2$I2
-  results$q_uwls1 <- methods$uwls1$Q
-  results$i2_uwls1 <- methods$uwls1$I2
   results$q_uwls2 <- methods$uwls2$Q
   results$i2_uwls2 <- methods$uwls2$I2
 
@@ -175,19 +167,23 @@ pcc_survey_analyse <- function(config, data_dir = "data") {
   pcc_df_out
 }
 
-# Map estimator column names (ending in "_est") to human-readable labels.
-# Shared by calculate_estimator_summary() and calculate_smallest_estimate_counts().
+# Map estimator column names to human-readable labels, in the Table 1 column
+# order requested by the co-authors. Shared by calculate_estimator_summary() and
+# calculate_smallest_estimate_counts(). Note "petpeese" has no "_est" suffix, so
+# the PP column appears in Table 1 but not in the smallest-estimate counts (which
+# select columns via the "_est" suffix).
 estimator_display_names <- function() {
   c(
+    "simple_mean_est" = "Mean",
     "re1_est" = "RE1",
     "re2_est" = "RE2",
     "uwls1_est" = "UWLS1",
     "uwls2_est" = "UWLS2",
-    "uwls3_est" = "UWLS3",
-    "hsma_est" = "HSMA",
-    "fishers_z_est" = "Fisher's z",
+    "uwls3_est" = "UWLS+3",
+    "hsma_est" = "HS",
+    "fishers_z_est" = "REz",
     "uwlsz_est" = "UWLSz",
-    "simple_mean_est" = "Simple mean"
+    "petpeese" = "PP"
   )
 }
 
@@ -205,15 +201,16 @@ calculate_estimator_summary <- function(results_df) {
   # Filter out "All meta-analyses" row
   individual_metas <- results_df[results_df$meta != "All meta-analyses", ]
 
-  # Get estimator columns (columns ending with _est)
-  estimator_cols <- grep("_est$", colnames(individual_metas), value = TRUE)
+  # Map column names to readable estimator names. The map also fixes the Table 1
+  # column set and order (Mean, RE1, RE2, ..., UWLSz, PP), restricted to columns
+  # actually present. Unlike the smallest-estimate counts this includes the
+  # PET-PEESE ("petpeese" -> "PP") column, which has no "_est" suffix.
+  estimator_names <- estimator_display_names()
+  estimator_cols <- names(estimator_names)[names(estimator_names) %in% colnames(individual_metas)]
 
   if (length(estimator_cols) == 0) {
-    cli::cli_abort("No estimator columns found (columns ending with '_est')")
+    cli::cli_abort("No estimator columns found")
   }
-
-  # Map column names to readable estimator names
-  estimator_names <- estimator_display_names()
 
   # Helper function to calculate skewness
   calculate_skewness <- function(x) {

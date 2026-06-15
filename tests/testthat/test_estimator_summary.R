@@ -89,14 +89,14 @@ test_that("calculate_estimator_summary handles NA values correctly", {
   expect_equal(result[result$Statistic == "SD", ]$UWLS1, sd(c(0.16, 0.26)), tolerance = 1e-10)
   expect_equal(result[result$Statistic == "missing", ]$UWLS1, 1L)
 
-  # HSMA with all NA should return NA for numeric statistics
-  expect_true(is.na(result[result$Statistic == "Mean", ]$HSMA))
-  expect_true(is.na(result[result$Statistic == "median", ]$HSMA))
-  expect_true(is.na(result[result$Statistic == "SD", ]$HSMA))
-  expect_equal(result[result$Statistic == "missing", ]$HSMA, 3L)
+  # HS with all NA should return NA for numeric statistics
+  expect_true(is.na(result[result$Statistic == "Mean", ]$HS))
+  expect_true(is.na(result[result$Statistic == "median", ]$HS))
+  expect_true(is.na(result[result$Statistic == "SD", ]$HS))
+  expect_equal(result[result$Statistic == "missing", ]$HS, 3L)
 })
 
-test_that("calculate_estimator_summary has correct column names and structure", {
+test_that("calculate_estimator_summary has correct column names, order, and includes PP", {
   df <- data.frame(
     meta = c("Meta1", "Meta2"),
     re1_est = c(0.11, 0.21),
@@ -106,18 +106,27 @@ test_that("calculate_estimator_summary has correct column names and structure", 
     uwls3_est = c(0.12, 0.22),
     hsma_est = c(0.11, 0.21),
     fishers_z_est = c(0.13, 0.23),
-    simple_mean_est =c(0.14, 0.24)
+    uwlsz_est = c(0.13, 0.23),
+    simple_mean_est = c(0.14, 0.24),
+    petpeese = c(0.09, 0.19)
   )
 
   result <- calculate_estimator_summary(df)
 
-  # Check column names - should have Statistic plus estimator columns
-  expect_true("Statistic" %in% colnames(result))
-  expect_true(all(c("RE1", "RE2", "UWLS1", "UWLS2", "UWLS3", "HSMA", "Fisher's z", "Simple mean") %in% colnames(result)))
+  # Estimator columns follow the co-authors' Table 1 order: the simple mean
+  # ("Mean") first and PET-PEESE ("PP") last. PP has no "_est" suffix but is
+  # still included in Table 1 (unlike in the smallest-estimate counts).
+  expect_equal(
+    colnames(result),
+    c("Statistic", "Mean", "RE1", "RE2", "UWLS1", "UWLS2", "UWLS+3", "HS", "REz", "UWLSz", "PP")
+  )
 
   # Check that all statistics are present
   expected_stats <- c("count", "minimum", "max", "missing", "skewness", "median", "IQR", "trimmed_mean_10", "Mean", "SD")
   expect_equal(sort(result$Statistic), sort(expected_stats))
+
+  # The PP column reflects the petpeese values
+  expect_equal(result[result$Statistic == "Mean", ]$PP, mean(c(0.09, 0.19)))
 
   # Check that count and missing have integer values (may be stored as double in data frame)
   count_val <- result[result$Statistic == "count", ]$RE1

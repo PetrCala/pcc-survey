@@ -170,13 +170,19 @@ if (file.exists(session_file)) {
 The main results file (`pcc_survey_results.csv`) should contain:
 
 - One row per meta-analysis (plus "All meta-analyses" row)
-- Columns for each estimator method:
-  - `re1_est`, `re2_est` - Random effects estimates
-  - `uwls1_est`, `uwls2_est`, `uwls3_est` - UWLS estimates
+- Columns for each estimator method (point estimate `_est` plus `_t_value`):
+  - `simple_mean_est` - simple unweighted mean (labelled "Mean")
+  - `re1_est`, `re2_est` - random effects (S1 / S2 SE)
+  - `uwls1_est`, `uwls2_est`, `uwls3_est` - UWLS (S1 / S2 / +3)
   - `hsma_est` - Hunter-Schmidt estimate
-  - `fishers_z_est` - Fisher's z estimate
-  - `waiv2_est` - WAIV2 estimate
-- Summary statistics: `k_`, `avg_n`, `median_n`, etc.
+  - `fishers_z_est` - random effects on Fisher's z (labelled "REz")
+  - `uwlsz_est` - UWLS on Fisher's z (labelled "UWLSz")
+- Per-MA heterogeneity (S2 sampling-error variance): `tau2_re2` (RE2) and
+  `gamma_uwls2`, `q_uwls2`, `i2_uwls2` (UWLS2)
+- PET-PEESE benchmark and FAT: `petpeese`, `petpeese_se`, `petpeese_type`,
+  `fat`, `fat_se`
+- Sign-alignment flag: `flipped`
+- Sample-size descriptives: `k_`, `avg_n`, `median_n`
 
 ## Step 6: Session Information
 
@@ -243,7 +249,7 @@ run_pcc_survey_analysis(config_path = "path/to/config.yaml")
 # Run Publication Selection Bias analysis
 psb_results <- run_psb_analysis()
 
-# Results saved to output/psb_results.csv
+# Results saved to output/psb_results.csv (ESS and related PSB measures)
 ```
 
 ### Custom Data Directory
@@ -270,7 +276,10 @@ filtering:
 - [ ] Analysis completed without errors
 - [ ] Output files generated:
   - [ ] `output/pcc_survey_results.csv`
-  - [ ] `output/estimator_summary.csv`
+  - [ ] `output/estimator_summary.csv` (Table 1)
+  - [ ] `output/smallest_estimate_counts.csv`
+  - [ ] `output/pcc_combined_dataset.csv`
+  - [ ] `output/psb_results.csv` (ESS / publication-selection bias)
   - [ ] `output/session_info.txt`
 - [ ] Log file created in `logs/`
 - [ ] Results match expected structure
