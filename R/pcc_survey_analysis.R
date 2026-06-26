@@ -194,7 +194,15 @@ estimator_display_names <- function() {
 #' This produces Table 1 from the analysis.
 #' Statistics are returned with estimators as columns and statistics as rows.
 #'
-#' @param results_df [data.frame] Results from pcc_survey_analyse() containing estimator columns
+#' Besides the standard descriptives, two Table 1 rows depend on other columns:
+#' `MSE_PP` is the mean squared difference of each estimator from PET-PEESE
+#' (requires a `petpeese` column; NA otherwise and for PP itself), and `Flipped`
+#' is the mean estimate over the sign-flipped meta-analyses (requires a `flipped`
+#' flag; NA otherwise).
+#'
+#' @param results_df [data.frame] Results from pcc_survey_analyse() containing
+#'   estimator columns, plus optionally `petpeese` and `flipped` for the
+#'   `MSE_PP` and `Flipped` rows.
 #' @return [data.frame] Summary table with statistics as rows and estimators as columns
 #' @export
 calculate_estimator_summary <- function(results_df) {
@@ -235,6 +243,31 @@ calculate_estimator_summary <- function(results_df) {
     n_missing <- sum(is.na(values))
     n_valid <- length(values_clean)
 
+    # MSE relative to PET-PEESE ("MSE-PP" row of Table 1): the mean squared
+    # difference between this estimator and PET-PEESE across meta-analyses.
+    # PET-PEESE versus itself is left undefined (NA, shown blank in Table 1);
+    # NA also when the "petpeese" column is absent.
+    pp_vals <- individual_metas[["petpeese"]]
+    if (col == "petpeese" || is.null(pp_vals)) {
+      mse_pp <- NA_real_
+    } else {
+      sq_diff <- (values - pp_vals)^2
+      mse_pp <- if (all(is.na(sq_diff))) NA_real_ else mean(sq_diff, na.rm = TRUE)
+    }
+
+    # Mean over the sign-flipped meta-analyses ("Flipped" row of Table 1): the
+    # average estimate restricted to MAs whose effects were flipped for sign
+    # alignment (see convert_inverse_relationships()). NA when the "flipped"
+    # flag is absent or no meta-analysis was flipped.
+    flipped_flag <- individual_metas[["flipped"]]
+    if (is.null(flipped_flag)) {
+      flipped_mean <- NA_real_
+    } else {
+      flipped_vals <- values[as.logical(flipped_flag)]
+      flipped_vals <- flipped_vals[!is.na(flipped_vals)]
+      flipped_mean <- if (length(flipped_vals) == 0) NA_real_ else mean(flipped_vals)
+    }
+
     # Common values for all cases
     count_val <- as.integer(n_total)
     missing_val <- as.integer(n_missing)
@@ -271,12 +304,17 @@ calculate_estimator_summary <- function(results_df) {
       IQR = iqr,
       trimmed_mean_10 = trimmed_mean,
       Mean = mean_val,
-      SD = sd_val
+      SD = sd_val,
+      MSE_PP = mse_pp,
+      Flipped = flipped_mean
     )
   })
 
   # Create data frame with statistics as rows and estimators as columns
-  stat_names <- c("Mean", "median", "SD", "count", "minimum", "max", "missing", "skewness", "IQR", "trimmed_mean_10")
+  stat_names <- c(
+    "Mean", "median", "SD", "count", "minimum", "max", "missing",
+    "skewness", "IQR", "trimmed_mean_10", "MSE_PP", "Flipped"
+  )
   summary_df <- data.frame(
     Statistic = stat_names,
     stringsAsFactors = FALSE

@@ -16,8 +16,8 @@ test_that("calculate_estimator_summary excludes 'All meta-analyses' row", {
 
   result <- calculate_estimator_summary(df)
 
-  # Should have 10 rows (one per statistic)
-  expect_equal(nrow(result), 10)
+  # Should have 12 rows (one per statistic)
+  expect_equal(nrow(result), 12)
 
   # Should have Statistic column plus 8 estimator columns
   expect_equal(ncol(result), 9)
@@ -122,7 +122,10 @@ test_that("calculate_estimator_summary has correct column names, order, and incl
   )
 
   # Check that all statistics are present
-  expected_stats <- c("count", "minimum", "max", "missing", "skewness", "median", "IQR", "trimmed_mean_10", "Mean", "SD")
+  expected_stats <- c(
+    "count", "minimum", "max", "missing", "skewness", "median", "IQR",
+    "trimmed_mean_10", "Mean", "SD", "MSE_PP", "Flipped"
+  )
   expect_equal(sort(result$Statistic), sort(expected_stats))
 
   # The PP column reflects the petpeese values
@@ -133,6 +136,57 @@ test_that("calculate_estimator_summary has correct column names, order, and incl
   missing_val <- result[result$Statistic == "missing", ]$RE1
   expect_equal(count_val, as.integer(count_val)) # Value is an integer
   expect_equal(missing_val, as.integer(missing_val)) # Value is an integer
+})
+
+test_that("calculate_estimator_summary computes MSE_PP and Flipped rows", {
+  df <- data.frame(
+    meta = c("Meta1", "Meta2", "Meta3", "Meta4"),
+    re1_est = c(0.10, 0.20, 0.30, 0.40),
+    re2_est = c(0.12, 0.22, 0.32, 0.42),
+    uwls1_est = c(0.16, 0.26, 0.36, 0.46),
+    uwls2_est = c(0.17, 0.27, 0.37, 0.47),
+    uwls3_est = c(0.12, 0.22, 0.32, 0.42),
+    hsma_est = c(0.11, 0.21, 0.31, 0.41),
+    fishers_z_est = c(0.13, 0.23, 0.33, 0.43),
+    uwlsz_est = c(0.13, 0.23, 0.33, 0.43),
+    simple_mean_est = c(0.14, 0.24, 0.34, 0.44),
+    petpeese = c(0.05, 0.15, 0.25, 0.35),
+    flipped = c(TRUE, FALSE, TRUE, FALSE)
+  )
+
+  result <- calculate_estimator_summary(df)
+
+  # MSE_PP: mean of (estimator - petpeese)^2 across all meta-analyses
+  expect_equal(
+    result[result$Statistic == "MSE_PP", ]$RE1,
+    mean((c(0.10, 0.20, 0.30, 0.40) - c(0.05, 0.15, 0.25, 0.35))^2),
+    tolerance = 1e-12
+  )
+  # PET-PEESE versus itself is undefined (blank in Table 1)
+  expect_true(is.na(result[result$Statistic == "MSE_PP", ]$PP))
+
+  # Flipped: mean restricted to the sign-flipped MAs (rows 1 and 3)
+  expect_equal(result[result$Statistic == "Flipped", ]$RE1, mean(c(0.10, 0.30)))
+  expect_equal(result[result$Statistic == "Flipped", ]$PP, mean(c(0.05, 0.25)))
+})
+
+test_that("MSE_PP and Flipped are NA when petpeese/flipped columns are absent", {
+  df <- data.frame(
+    meta = c("Meta1", "Meta2", "Meta3"),
+    re1_est = c(0.11, 0.21, 0.31),
+    re2_est = c(0.12, 0.22, 0.32),
+    uwls1_est = c(0.16, 0.26, 0.36),
+    uwls2_est = c(0.17, 0.27, 0.37),
+    uwls3_est = c(0.12, 0.22, 0.32),
+    hsma_est = c(0.11, 0.21, 0.31),
+    fishers_z_est = c(0.13, 0.23, 0.33),
+    simple_mean_est = c(0.14, 0.24, 0.34)
+  )
+
+  result <- calculate_estimator_summary(df)
+
+  expect_true(all(is.na(result[result$Statistic == "MSE_PP", -1])))
+  expect_true(all(is.na(result[result$Statistic == "Flipped", -1])))
 })
 
 test_that("calculate_estimator_summary handles single meta-analysis", {

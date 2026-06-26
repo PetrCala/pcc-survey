@@ -15,6 +15,10 @@
   (smallest signed) and negative counts (`smallest_estimate_counts.csv`).
 - `flipped` column in the per-MA results flags meta-analyses whose effects were
   sign-aligned (median PCC negative), with the count logged.
+- Two Table 1 rows added to the estimator summary so it fully reproduces the
+  manuscript's Table 1: `MSE_PP` (mean squared difference of each estimator from
+  PET-PEESE; blank for PP itself) and `Flipped` (mean estimate over the
+  sign-flipped meta-analyses).
 
 ### Changed (RSM revision follow-up)
 - Added the simple unweighted mean (`simple_mean()`, labelled "Mean") as the
