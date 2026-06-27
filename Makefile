@@ -67,7 +67,7 @@ test:
 	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup-dev'); devtools::test()"
 
 clean:
-	@$(RSCRIPT) -e "f1 <- file.path('$(PROJECT_DIR)','output','pcc_survey_results.csv'); f2 <- file.path('$(PROJECT_DIR)','output','psb_results.csv'); removed <- FALSE; if (file.exists(f1)) { file.remove(f1); cat('Removed:', f1, '\n'); removed <- TRUE }; if (file.exists(f2)) { file.remove(f2); cat('Removed:', f2, '\n'); removed <- TRUE }; if (!removed) { cat('No generated output to remove\n') }"
+	@$(RSCRIPT) -e "outs <- file.path('$(PROJECT_DIR)','output', c('pcc_survey_results.csv','estimator_summary.csv','smallest_estimate_counts.csv','pcc_combined_dataset.csv','psb_results.csv','session_info.txt')); existing <- outs[file.exists(outs)]; if (length(existing)) { file.remove(existing); cat('Removed:', existing, sep='\n'); cat('\n') } else { cat('No generated output to remove\n') }"
 
 doctor:
 	@$(RSCRIPT) -e "cat('R version:', R.version.string, '\n')"

@@ -1,5 +1,7 @@
 communication/
 
+.DS_Store
+
 _cache/
 local/
 logs/

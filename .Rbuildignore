@@ -1,6 +1,5 @@
 ^renv$
 ^renv\.lock$
-^\.cursor$
 ^\.git$
 ^\.gitignore$
 ^\.github$
@@ -11,7 +10,6 @@
 ^_cache$
 ^communication$
 ^docs$
-^local$
 ^logs$
 ^output$
 ^secondary-stats$
