@@ -8,11 +8,9 @@
 #'
 #' @param config_path Path to the PCC Survey config YAML file. Defaults to
 #'   `inst/extdata/pcc_survey_config.yaml`.
-#' @param use_sample [logical] If TRUE, use sample data from `inst/extdata/sample_data.xlsx`
-#'   instead of the full dataset. Useful for testing. Default: FALSE.
 #' @return Invisibly returns the analysis results data frame.
 #' @export
-run_pcc_survey_analysis <- function(config_path = NULL, use_sample = FALSE) {
+run_pcc_survey_analysis <- function(config_path = NULL) {
   # Load config
   if (is.null(config_path)) {
     config_path <- pccsurvey_extdata("pcc_survey_config.yaml")
@@ -24,18 +22,7 @@ run_pcc_survey_analysis <- function(config_path = NULL, use_sample = FALSE) {
 
   config <- yaml::read_yaml(config_path)
 
-  # Override data file if using sample data
   data_dir <- "data"
-  if (use_sample) {
-    sample_file <- pccsurvey_extdata("sample_data.xlsx")
-    if (!file.exists(sample_file)) {
-      cli::cli_abort("Sample data file not found: {.file {sample_file}}")
-    }
-    config$data$file_name <- basename(sample_file)
-    config$data$sheet_name <- "Main"
-    data_dir <- dirname(sample_file) # Use inst/extdata as data directory for sample
-    logger::log_info(paste("Using sample data from:", sample_file))
-  }
 
   # Setup logging
   setup_pcc_survey_logging(

@@ -192,12 +192,12 @@ cat(readLines("output/session_info.txt"), sep = "\n")
 **Solution**:
 
 ```r
-# Check data availability
+# Confirm the dataset is present and readable
 check_data_file()
-
-# Use sample data for testing
-run_pcc_survey_analysis(use_sample = TRUE)
 ```
+
+Ensure `data/pcc_survey_data.xlsx` exists (it ships with the repository). If you
+are using a substitute dataset, confirm it matches the schema in the README.
 
 ### Dependency Issues
 
