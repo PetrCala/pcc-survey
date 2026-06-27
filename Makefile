@@ -1,6 +1,6 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help setup snapshot document build check lint run run-psb validate clean doctor test replicate zip
+.PHONY: help setup setup-dev snapshot document build check lint run run-psb validate clean doctor test replicate zip
 
 # Absolute path to this repo's root (directory containing this Makefile).
 # This avoids hard-coding the project directory name and works even if `make`
@@ -16,6 +16,7 @@ help:
 	@echo "Targets:"
 	@echo "  help      Show this help"
 	@echo "  setup     Restore dependencies via renv (creates reproducible environment)"
+	@echo "  setup-dev Install maintainer tooling (devtools, roxygen2, testthat, lintr)"
 	@echo "  snapshot  Update renv.lock with current package versions (run after changing dependencies)"
 	@echo "  replicate Run complete replication workflow (setup + data check + analysis)"
 	@echo "  document  Generate roxygen docs (NAMESPACE/man)"
@@ -31,47 +32,53 @@ help:
 	@echo ""
 
 setup:
-	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('renv', quietly=TRUE)) install.packages('renv', repos='https://cloud.r-project.org'); renv::restore()"
+	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('renv', quietly=TRUE)) install.packages('renv', repos='https://cloud.r-project.org'); renv::restore(); if (!requireNamespace('pkgload', quietly=TRUE)) renv::install('pkgload')"
+
+# Maintainer-only tooling (not needed to replicate the analysis). These packages
+# are Suggests and are intentionally not in renv.lock (explicit snapshot), so
+# install them separately before running document/check/lint/test.
+setup-dev:
+	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('renv', quietly=TRUE)) install.packages('renv', repos='https://cloud.r-project.org'); renv::install(c('devtools', 'roxygen2', 'testthat', 'lintr'))"
 
 snapshot:
 	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('renv', quietly=TRUE)) install.packages('renv', repos='https://cloud.r-project.org'); renv::snapshot(force = TRUE, prompt = FALSE)"
 
 document:
-	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup'); devtools::document()"
+	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup-dev'); devtools::document()"
 
 build:
-	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup'); devtools::build()"
+	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup-dev'); devtools::build()"
 
 check:
-	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup'); devtools::check()"
+	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup-dev'); devtools::check()"
 
 lint:
-	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup'); if (!requireNamespace('lintr', quietly=TRUE)) stop('lintr not installed; run make setup'); l <- lintr::lint_package(); if (length(l) > 0) { print(l); quit(status=1) }"
+	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup-dev'); if (!requireNamespace('lintr', quietly=TRUE)) stop('lintr not installed; run make setup-dev'); l <- lintr::lint_package(); if (length(l) > 0) { print(l); quit(status=1) }"
 
 run:
-	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup'); devtools::load_all('.'); run_pcc_survey_analysis()"
+	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('pkgload', quietly=TRUE)) stop('pkgload not installed; run make setup'); pkgload::load_all('.'); run_pcc_survey_analysis()"
 
 run-psb:
-	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup'); devtools::load_all('.'); run_psb_analysis()"
+	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('pkgload', quietly=TRUE)) stop('pkgload not installed; run make setup'); pkgload::load_all('.'); run_psb_analysis()"
 
 validate: run
 
 test:
-	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup'); devtools::test()"
+	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup-dev'); devtools::test()"
 
 clean:
 	@$(RSCRIPT) -e "f1 <- file.path('$(PROJECT_DIR)','output','pcc_survey_results.csv'); f2 <- file.path('$(PROJECT_DIR)','output','psb_results.csv'); removed <- FALSE; if (file.exists(f1)) { file.remove(f1); cat('Removed:', f1, '\n'); removed <- TRUE }; if (file.exists(f2)) { file.remove(f2); cat('Removed:', f2, '\n'); removed <- TRUE }; if (!removed) { cat('No generated output to remove\n') }"
 
 doctor:
 	@$(RSCRIPT) -e "cat('R version:', R.version.string, '\n')"
-	@$(RSCRIPT) -e "if (requireNamespace('devtools', quietly=TRUE)) { devtools::session_info() } else { cat('devtools not installed (run make setup)\\n') }"
+	@$(RSCRIPT) -e "if (requireNamespace('devtools', quietly=TRUE)) { devtools::session_info() } else { cat('devtools not installed (run make setup-dev for full session info)\\n') }"
 
 replicate:
 	@echo "=== Starting replication workflow ==="
 	@echo "Step 1: Restoring dependencies..."
 	@cd "$(PROJECT_DIR)" && $(MAKE) setup
 	@echo "Step 2: Checking data availability..."
-	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup'); devtools::load_all('.'); if (exists('check_data_availability')) { check_data_availability() } else { cat('Data check function not yet implemented\\n') }"
+	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('pkgload', quietly=TRUE)) stop('pkgload not installed; run make setup'); pkgload::load_all('.'); if (exists('check_data_availability')) { check_data_availability() } else { cat('Data check function not yet implemented\\n') }"
 	@echo "Step 3: Running analysis..."
 	@cd "$(PROJECT_DIR)" && $(MAKE) run
 	@echo "Step 4: Running publication-selection-bias (ESS) analysis..."

@@ -12,6 +12,7 @@ A reproducible R package for a PCC (Partial Correlation Coefficient) methods sur
 - [Usage Reference](#usage-reference)
 - [Configuration](#configuration)
 - [Data](#data)
+- [Data and code availability](#data-and-code-availability)
 - [Reproducibility](#reproducibility)
 - [Troubleshooting](#troubleshooting)
 - [Development](#development)
@@ -57,12 +58,19 @@ if (!requireNamespace("renv", quietly = TRUE)) {
 }
 renv::restore()
 
-# 2. Load the package
-devtools::load_all(".")
+# 2. Load the package (pkgload is a lightweight loader; install if needed)
+if (!requireNamespace("pkgload", quietly = TRUE)) renv::install("pkgload")
+pkgload::load_all(".")
 
 # 3. Run the analysis
 run_pcc_survey_analysis()
 ```
+
+> `renv::restore()` installs the locked **runtime** dependencies. The developer
+> tools (`devtools`, `roxygen2`, `testthat`, `lintr`) are `Suggests` and are not
+> in the lockfile; the analysis only needs `pkgload` to load the package, so the
+> snippet above is all you need to reproduce the results. Maintainers can install
+> the dev tools with `make setup-dev`.
 
 Results are written to `output/` (see [Outputs](#outputs)).
 
@@ -92,7 +100,7 @@ This runs setup, data checks, and the analysis in sequence. Run `make help` to s
 
 ```r
 # Load the package
-devtools::load_all(".")
+pkgload::load_all(".")
 
 # Run PCC Survey analysis
 results <- run_pcc_survey_analysis()
@@ -108,17 +116,20 @@ check_data_availability()
 
 ```bash
 make help       # Show all available targets
-make setup      # Restore dependencies via renv
+make setup      # Restore runtime dependencies via renv (+ pkgload loader)
 make replicate  # Full workflow: setup + data check + analysis
 make run        # Run PCC Survey analysis only
 make run-psb    # Run PSB analysis only
+make zip        # Bundle output CSVs, session_info, and latest log into a zip
+make clean      # Remove generated output files
+make doctor     # Print R and package version info
+
+# Maintainer targets (require `make setup-dev` first):
+make setup-dev  # Install devtools, roxygen2, testthat, lintr
 make test       # Run testthat tests
 make check      # Run R CMD check
 make document   # Regenerate roxygen docs
 make lint       # Run lintr (exits non-zero on lint errors)
-make clean      # Remove generated output files
-make doctor     # Print R and package version info
-make zip        # Bundle output CSVs, session_info, and latest log into a zip
 ```
 
 ## Configuration
@@ -156,6 +167,13 @@ The file must contain a sheet named `"Main"` with the following columns:
 | `Year published` | Publication year |
 
 If you need to substitute a different dataset, place it at `data/pcc_survey_data.xlsx` (or update the path in `pcc_survey_config.yaml`) and ensure it matches the schema above.
+
+## Data and code availability
+
+Everything needed to reproduce the paper's empirical results lives in this repository, in two parts:
+
+- **Main analysis (this R package).** `data/pcc_survey_data.xlsx` together with the code in `R/` reproduces the per-meta-analysis results and Table 1 across the 172 PCC meta-analyses. Run it as in [Quick Start](#quick-start); results are written to `output/` (see [Outputs](#outputs)). `output/estimator_summary.csv` and `output/smallest_estimate_counts.csv` together contain every row of the manuscript's Table 1 — Mean, Median, Std Dev, Smallest, MSE-PP, and Flipped.
+- **Secondary statistics (`secondary-stats/`).** Companion analyses provided by co-author Tom Stanley and calculated outside the R pipeline (Stata / Statview / spreadsheets): the survey descriptive statistics, the PSST and aggregate Egger/FAT-PET publication-selection tests, the ICT illustration, and the combined study-level dataset (`PCCcombined.dta`). See [`secondary-stats/README.md`](secondary-stats/README.md) for a file-by-file guide. These are reference and provenance artifacts; they are **not** inputs to the R analysis above.
 
 ## Reproducibility
 
@@ -205,6 +223,14 @@ sudo dnf install -y libcurl-devel openssl-devel libxml2-devel
 Add the R `bin` directory to your `PATH`, or install [Rtools](https://cran.r-project.org/bin/windows/Rtools/) which includes it.
 
 ## Development
+
+Developer tooling (`devtools`, `roxygen2`, `testthat`, `lintr`) is declared under
+`Suggests` and is **not** part of the locked runtime environment. Install it once
+with:
+
+```bash
+make setup-dev
+```
 
 ### Running tests
 
