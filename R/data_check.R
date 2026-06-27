@@ -62,64 +62,6 @@ check_data_availability <- function(file_name = "pcc_survey_data.xlsx", data_dir
   invisible(TRUE)
 }
 
-#' Validate data structure
-#'
-#' Checks that a data frame has the expected columns and basic structure.
-#'
-#' @param df [data.frame] The data frame to validate
-#' @param expected_cols [character] Vector of expected column names
-#' @param min_rows [integer] Minimum number of rows expected (default: 1)
-#' @return [logical] TRUE if validation passes
-#' @export
-validate_data_structure <- function(df, expected_cols, min_rows = 1) {
-  if (!is.data.frame(df)) {
-    cli::cli_abort("'df' must be a data frame.", call = NULL)
-  }
-
-  if (nrow(df) < min_rows) {
-    cli::cli_abort(
-      "Data frame has {nrow(df)} row(s), but at least {min_rows} row(s) are expected.",
-      call = NULL
-    )
-  }
-
-  missing_cols <- setdiff(expected_cols, colnames(df))
-  if (length(missing_cols) > 0) {
-    cli::cli_abort(
-      c(
-        "Missing required columns: {.val {missing_cols}}",
-        "Available columns: {.val {colnames(df)}}"
-      ),
-      call = NULL
-    )
-  }
-
-  logger::log_debug(paste("Data structure validation passed:", nrow(df), "rows,", ncol(df), "columns"))
-  invisible(TRUE)
-}
-
-#' Get file checksum for verification
-#'
-#' Calculates MD5 or SHA256 checksum of a file for verification purposes.
-#'
-#' @param file_path [character] Path to the file
-#' @param algorithm [character] Hash algorithm: "md5" or "sha256" (default: "md5")
-#' @return [character] Checksum string
-#' @export
-get_data_checksum <- function(file_path, algorithm = c("md5", "sha256")) {
-  algorithm <- match.arg(algorithm)
-
-  if (!file.exists(file_path)) {
-    cli::cli_abort("File not found: {.file {file_path}}", call = NULL)
-  }
-
-  if (algorithm == "md5") {
-    digest::digest(file_path, algo = "md5", file = TRUE)
-  } else {
-    digest::digest(file_path, algo = "sha256", file = TRUE)
-  }
-}
-
 #' Check data file and provide detailed information
 #'
 #' Comprehensive check of data file availability, structure, and basic statistics.
