@@ -90,7 +90,9 @@ This runs setup, data checks, and the analysis in sequence. Run `make help` to s
 | --- | --- |
 | `output/pcc_survey_results.csv` | Main results — statistics for each meta-analysis |
 | `output/estimator_summary.csv` | Summary statistics across all estimators (Table 1) |
-| `output/psb_results.csv` | Publication Selection Bias analysis results |
+| `output/smallest_estimate_counts.csv` | Per-estimator "most conservative" (smallest) and negative counts |
+| `output/pcc_combined_dataset.csv` | Combined study-level dataset for the aggregate FAT-PET panel |
+| `output/psb_results.csv` | Publication Selection Bias / ESS analysis results |
 | `output/session_info.txt` | R session info for reproducibility |
 | `logs/pcc_survey_analysis_YYYYMMDD_HHMMSS.log` | Timestamped execution log |
 
@@ -200,7 +202,7 @@ Verify the file is present:
 ls -lh data/pcc_survey_data.xlsx
 ```
 
-If the file is missing from your clone, check that Git LFS (if used) is properly initialized, or re-copy the file to `data/pcc_survey_data.xlsx`.
+The file is committed directly to the repository (no Git LFS). If it is missing from your clone, the clone was likely incomplete — re-pull or re-clone, or copy the file back to `data/pcc_survey_data.xlsx`.
 
 ### Excel file reading errors
 
