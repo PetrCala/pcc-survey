@@ -57,12 +57,10 @@
 - Support for PCC (Partial Correlation Coefficient) meta-analysis
 - PCC Survey analysis workflow for processing large datasets
 - PSB (Publication Selection Bias) analysis
-- Multiple meta-analysis methods: RE, UWLS, UWLS+3, HSMA, Fisher's Z, WAIV2, MAIVE
+- Multiple meta-analysis estimators: simple mean, RE, UWLS, UWLS+3, HS, and Fisher's z (RE and UWLS)
 - Data validation and availability checking functions
-- Sample data for quick testing
 - Session info capture for reproducibility
 - renv support for dependency management
-- GitHub Actions CI workflow for cross-platform testing
 
 ### Infrastructure
 - renv lockfile for reproducible environments

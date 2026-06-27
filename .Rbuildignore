@@ -14,6 +14,7 @@
 ^local$
 ^logs$
 ^output$
+^secondary-stats$
 ^utils$
 ^Makefile$
 ^.lintr$
