@@ -6,6 +6,8 @@
 _cache/
 logs/
 output/
+secondary-stats/
+communication/
 renv/library/
 renv/staging/
 .DS_Store

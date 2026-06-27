@@ -24,6 +24,7 @@ Imports:
 Suggests:
     devtools,
     knitr,
+    lifecycle,
     lintr,
     rmarkdown,
     roxygen2,

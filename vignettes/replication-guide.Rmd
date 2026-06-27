@@ -32,76 +32,63 @@ Before starting, ensure you have:
 
 ## Step 1: Installation
 
-### Option A: From GitHub (Development Version)
+### Option A: Replicate from a repository clone (recommended)
+
+Clone the repository — it already includes the dataset (`data/pcc_survey_data.xlsx`)
+and the locked dependency versions (`renv.lock`). From the project root, restore
+the exact environment:
 
 ```r
-# Install devtools if needed
-if (!requireNamespace("devtools", quietly = TRUE)) {
-  install.packages("devtools")
-}
-
-# Install the package
-devtools::install_github("PetrCala/pcc-survey")
+if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+renv::restore()
 ```
 
-### Option B: From Local Source
+### Option B: Install the package into your library
 
 ```r
-# Navigate to package directory
-setwd("/path/to/pcc-survey")
+# From GitHub
+install.packages("devtools")   # or: make setup-dev
+devtools::install_github("PetrCala/pcc-survey")
 
-# Install
+# ...or from a local clone
 devtools::install()
 ```
 
 ## Step 2: Environment Setup
 
-The package uses `renv` for reproducible dependency management.
+The package uses `renv` for reproducible dependency management; `renv::restore()`
+(above) installs every runtime dependency at the version pinned in `renv.lock`.
+
+To load the package from a repository clone, use the lightweight `pkgload`
+loader — this is all the analysis needs:
 
 ```r
-# Load the package
-library(pccsurvey)
-
-# Restore the exact environment
-renv::restore()
+if (!requireNamespace("pkgload", quietly = TRUE)) renv::install("pkgload")
+pkgload::load_all(".")
 ```
 
-This will install all required packages at the exact versions specified in `renv.lock`.
+The developer tools (`devtools`, `roxygen2`, `testthat`, `lintr`) are optional
+and only needed for package development; install them with `make setup-dev`. If
+you installed the package via Option B instead, load it with `library(pccsurvey)`.
 
 ## Step 3: Data Preparation
 
 ### Full Dataset
 
-1. **Obtain the data file**: The source file is typically named something like `Copy of all_datasets_combined End 2023.xlsx` and contains over 200,000 rows.
-
-2. **Place the file**:
-
-   ```r
-   # Create data directory if it doesn't exist
-   dir.create("data", showWarnings = FALSE)
-   
-   # Copy your file to data/pcc_survey_data.xlsx
-   # (Do this manually or via file system)
-   ```
-
-3. **Verify the file**:
-
-   ```r
-   # Check if file exists
-   file.exists("data/pcc_survey_data.xlsx")
-   
-   # Check data availability
-   check_data_availability()
-   ```
-
-### Sample Data (For Testing)
-
-If you want to test without the full dataset:
+The analysis dataset is included in the repository at `data/pcc_survey_data.xlsx`
+(~200,000 rows), so a clone needs no extra download. Verify it is present:
 
 ```r
-# Use the included sample data
-run_pcc_survey_analysis(use_sample = TRUE)
+# Check if the file exists
+file.exists("data/pcc_survey_data.xlsx")
+
+# Check data availability
+check_data_availability()
 ```
+
+To substitute a different dataset, place it at `data/pcc_survey_data.xlsx` (or
+point `data.file_name` in `pcc_survey_config.yaml` elsewhere) using the schema
+documented in the README.
 
 ## Step 4: Run the Analysis
 

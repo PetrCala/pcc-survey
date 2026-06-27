@@ -158,13 +158,12 @@ calculate_ess <- function(df, uwls_estimate, tau2, se = NULL, alpha = 0.05) {
 #' Calculate all PSB measures for a given method
 #'
 #' @param df [data.frame] The data frame with 'effect', 'se', 't_value', and 'dof' columns
-#' @param method_name [character] Name of the method (e.g., "uwls", "uwls3", "hs")
 #' @param uwls_estimate [numeric] The UWLS estimate (mean effect) from the method
 #' @param tau2 [numeric] Heterogeneity variance (tau^2) from RE1
 #' @param alpha [numeric] Significance level (default: 0.05)
 #' @return [list] List containing PSB measures (ess_prop, esig, pss, k) all as proportions
 #' @export
-calculate_psb_measures <- function(df, method_name, uwls_estimate, tau2, alpha = 0.05) {
+calculate_psb_measures <- function(df, uwls_estimate, tau2, alpha = 0.05) {
   stopifnot(!is.na(uwls_estimate), !is.na(tau2))
 
   n_total <- nrow(df)
@@ -222,7 +221,7 @@ get_psb_metaflavours <- function(df, re_method = "ML", alpha = 0.05) {
     method_name <- method$name
     uwls_estimate <- method$result$est
 
-    psb_measures <- calculate_psb_measures(df, method_name, uwls_estimate, tau2, alpha)
+    psb_measures <- calculate_psb_measures(df, uwls_estimate, tau2, alpha)
 
     results[[paste0("ess_", method_name)]] <- psb_measures$ess_prop
     results[[paste0("esig_", method_name)]] <- psb_measures$esig

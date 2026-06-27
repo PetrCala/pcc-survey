@@ -468,7 +468,7 @@ validate_pcc_observations <- function(df) {
   df
 }
 
-#' Compute all derived quantities needed by the 8 methods
+#' Compute all derived quantities needed by the estimators
 #'
 #' Assumes the data has already passed validate_pcc_observations() and
 #' convert_inverse_relationships(). Adds columns: se_s1, se_s2,

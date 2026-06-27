@@ -14,7 +14,7 @@ test_that("calculate_psb_measures returns all required measures", {
   uwls_estimate <- 0.2
   tau2 <- get_re1_tau2(df)
   if (is.na(tau2)) tau2 <- 0.0 # Fallback for test
-  measures <- calculate_psb_measures(df, "test_method", uwls_estimate, tau2)
+  measures <- calculate_psb_measures(df, uwls_estimate, tau2)
 
   # Should return all required fields
   expect_named(measures, c(
@@ -42,7 +42,7 @@ test_that("calculate_psb_measures calculates correctly", {
   uwls_estimate <- 0.2
   tau2 <- get_re1_tau2(df)
   if (is.na(tau2)) tau2 <- 0.0 # Fallback for test
-  measures <- calculate_psb_measures(df, "test_method", uwls_estimate, tau2)
+  measures <- calculate_psb_measures(df, uwls_estimate, tau2)
 
   # Verify individual calculations
   n_total <- nrow(df)
@@ -68,7 +68,7 @@ test_that("calculate_psb_measures errors on NA uwls_estimate", {
   tau2 <- get_re1_tau2(df)
 
   # calculate_psb_measures requires a non-NA uwls_estimate
-  expect_error(calculate_psb_measures(df, "test_method", NA_real_, tau2))
+  expect_error(calculate_psb_measures(df, NA_real_, tau2))
 })
 
 test_that("get_psb_metaflavours returns data frame with correct structure", {

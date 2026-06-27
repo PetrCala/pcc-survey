@@ -1,5 +1,9 @@
+# Internal null-coalescing operator. Base R only exports `%||%` from R 4.4.0,
+# but this package targets R >= 4.1.0 (see DESCRIPTION), so define our own.
+`%||%` <- function(x, y) if (is.null(x)) y else x
+
 # Internal helper: resolve a path under inst/extdata both for installed packages
-# and when running from the repo with `devtools::load_all()`.
+# and when running from the repo with `pkgload::load_all()`.
 pccsurvey_extdata <- function(...) {
   p <- system.file("extdata", ..., package = "pccsurvey")
   if (nzchar(p)) {
