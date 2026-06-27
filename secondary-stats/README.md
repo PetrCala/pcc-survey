@@ -7,7 +7,7 @@ this repository and written to `output/pcc_survey_results.csv` and
 `output/estimator_summary.csv`; the files here cover the secondary analyses calculated
 separately (largely in Stata/Statview/spreadsheets).
 
-See `ReadMe.docx` for Tom's original notes. In brief:
+## Files in this folder
 
 | File(s) | Contents |
 | --- | --- |
@@ -18,6 +18,3 @@ See `ReadMe.docx` for Tom's original notes. In brief:
 | `FAT-PET-FE-MetaScience.docx` | Aggregate Egger test (FAT-PET-FE) with code. |
 | `PCCcombined.dta` | Combined study-level dataset across the 172 MAs. |
 | `pcc_survey_results.dta` | Per-MA results (Stata copy); individual Egger tests (FAT) live here. |
-
-Source: e-mail from Tom Stanley, 25 Jun 2026 ("For replication package",
-`Secondary-Stats-PCC-Survey.zip`).
