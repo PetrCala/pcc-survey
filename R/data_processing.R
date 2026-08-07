@@ -15,7 +15,16 @@ read_pcc_survey_data <- function(file_name = "pcc_survey_data.xlsx", sheet_name 
   file_path <- file.path(data_dir, file_name)
 
   logger::log_debug("Reading data from ", file_path)
-  df <- readxl::read_excel(path = file_path, sheet = sheet_name)
+  df <- tryCatch(
+    suppressWarnings(readxl::read_excel(path = file_path, sheet = sheet_name)),
+    error = function(e) {
+      cli::cli_abort(c(
+        "Failed to read {.file {file_path}}: {conditionMessage(e)}",
+        "i" = "This file is large (~100MB) and loading it needs several GB of free RAM.",
+        "i" = "Close other applications and try again if you ran out of memory."
+      ))
+    }
+  )
 
   # Convert tibble to data.frame
   df <- as.data.frame(df)
