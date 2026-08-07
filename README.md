@@ -21,6 +21,7 @@ A reproducible R package for a PCC (Partial Correlation Coefficient) methods sur
 ## Prerequisites
 
 - **R** >= 4.1.0
+- **A few GB of free RAM** — `data/pcc_survey_data.xlsx` is ~100MB but reading it needs headroom well beyond the file size; on a run with ~6GB free the read failed, and it succeeded with ~8GB free, so close other memory-heavy applications if the read errors out
 - **make** is optional — all workflows can be run directly from R (see [Quick Start](#quick-start))
 
 ### System libraries (for compiling R packages from source)
