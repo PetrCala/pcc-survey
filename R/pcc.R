@@ -49,8 +49,10 @@ pcc_se_s2 <- function(df) {
 #' @param effect [vector] The vector of effects. If not provided, defaults to df$effect.
 #' @param se [vector] The vector of SEs. If not provided, defaults to df$se.
 #' @param method [character] The method to use for the RE calculation. Defaults to "ML".
-#' @return [list] A list with properties "est", "t_value", and the heterogeneity
-#'   statistics "tau2" (heterogeneity variance), "Q" (Cochran's Q) and "I2".
+#' @return [list] A list with properties "est", "t_value", the heterogeneity
+#'   statistics "tau2" (heterogeneity variance), "Q" (Cochran's Q) and "I2", and
+#'   "weights": the per-estimate random-effects weights 1 / (se^2 + tau2),
+#'   normalised to sum to 1 (see [weight_concentration()]).
 #' @export
 re <- function(df, effect = NULL, se = NULL, method = "ML") {
   if (is.null(effect)) effect <- df$effect
@@ -78,12 +80,17 @@ re <- function(df, effect = NULL, se = NULL, method = "ML") {
   re_se <- re_$se[1]
   re_t_value <- re_est / re_se
 
+  # Random-effects weights: 1 / (sampling variance + tau2), normalised. These are
+  # the weights metafor applies to the estimates (weights(re_) / 100).
+  w <- 1 / (se^2 + as.numeric(re_$tau2))
+
   list(
     est = re_est,
     t_value = re_t_value,
     tau2 = as.numeric(re_$tau2),
     Q = as.numeric(re_$QE),
-    I2 = as.numeric(re_$I2)
+    I2 = as.numeric(re_$I2),
+    weights = w / sum(w)
   )
 }
 
@@ -98,7 +105,9 @@ re <- function(df, effect = NULL, se = NULL, method = "ML") {
 #' @return [list] A list with properties "est", "t_value", and the heterogeneity
 #'   statistics "gamma" (multiplicative variance), "Q" = (k - 1) * gamma and
 #'   "I2" = max(0, 1 - 1 / gamma) * 100 (a percentage, matching metafor's I2
-#'   scale). The heterogeneity statistics are NA when k < 2.
+#'   scale). The heterogeneity statistics are NA when k < 2. Also "weights": the
+#'   per-estimate inverse-variance weights 1 / se^2, normalised to sum to 1 (the
+#'   no-intercept regression of t on precision is the 1 / se^2 weighted mean).
 #' @export
 uwls <- function(df, effect = NULL, se = NULL) {
   if (is.null(effect)) effect <- df$effect
@@ -131,7 +140,11 @@ uwls <- function(df, effect = NULL, se = NULL) {
     I2 <- NA_real_
   }
 
-  list(est = est, t_value = t_value, gamma = gamma, Q = Q, I2 = I2)
+  # UWLS point estimate = sum(effect / se^2) / sum(1 / se^2), i.e. the
+  # inverse-variance (fixed-effect) weighted mean; report those weights.
+  w <- 1 / se^2
+
+  list(est = est, t_value = t_value, gamma = gamma, Q = Q, I2 = I2, weights = w / sum(w))
 }
 
 
@@ -141,7 +154,8 @@ uwls <- function(df, effect = NULL, se = NULL) {
 #' Assumes all inputs are valid. Use validate_pcc_observations() to ensure this before calling.
 #'
 #' @param df [data.frame] The data frame with pre-computed 'pcc3' and 'se' columns.
-#' @return [list] A list with properties "est", "t_value".
+#' @return [list] As [uwls()]: "est", "t_value", heterogeneity statistics and
+#'   "weights" (1 / se^2 on the reported `se` column, normalised).
 #' @export
 uwls3 <- function(df) {
   stopifnot("pcc3" %in% colnames(df))
@@ -163,7 +177,8 @@ uwls3 <- function(df) {
 #' Use validate_pcc_observations() to ensure this before calling.
 #'
 #' @param df [data.frame] The data frame with 'effect' and 'sample_size' columns
-#' @return [list] A list with properties "est", "t_value".
+#' @return [list] A list with properties "est", "t_value" and "weights" (the
+#'   per-estimate sample-size weights n / sum(n)).
 #' @export
 hsma <- function(df) {
   stopifnot(all(!is.na(df$effect)))
@@ -179,7 +194,7 @@ hsma <- function(df) {
   se_r <- sqrt(sd_sq) / sqrt(nrow(df))
   t_value <- r_avg / se_r
 
-  list(est = r_avg, t_value = t_value)
+  list(est = r_avg, t_value = t_value, weights = n_ / sum(n_))
 }
 
 #' Calculate WAIV2 (Weighted Average IV version 2)
@@ -229,7 +244,8 @@ waiv2 <- function(df, effect = NULL, se = NULL) {
 #'
 #' @param df [data.frame] The data frame with pre-computed 'fishers_z' and 'fishers_z_se' columns
 #' @param method [character] Random effects method for Fisher's z calculation (default: "ML")
-#' @return [list] A list with properties "est", "t_value"
+#' @return [list] A list with properties "est", "t_value" and "weights" (the
+#'   random-effects weights of the underlying Fisher's z fit, normalised).
 #' @export
 fishers_z <- function(df, method = "ML") {
   stopifnot("fishers_z" %in% colnames(df))
@@ -249,7 +265,7 @@ fishers_z <- function(df, method = "ML") {
   # Convert back from Fisher's Z to PCC
   re_z <- (exp(2 * re_est) - 1) / (exp(2 * re_est) + 1)
 
-  list(est = re_z, t_value = re_t_value)
+  list(est = re_z, t_value = re_t_value, weights = re_list$weights)
 }
 
 #' Calculate UWLS on Fisher's z (UWLSz)
@@ -262,7 +278,9 @@ fishers_z <- function(df, method = "ML") {
 #' Use validate_pcc_observations() to ensure this before calling.
 #'
 #' @param df [data.frame] The data frame with pre-computed 'fishers_z' and 'fishers_z_se' columns
-#' @return [list] A list with properties "est", "t_value"
+#' @return [list] A list with properties "est", "t_value" and "weights" (the
+#'   inverse-variance weights of the underlying Fisher's z fit, i.e. n - 3,
+#'   normalised).
 #' @export
 uwls_fishers_z <- function(df) {
   stopifnot("fishers_z" %in% colnames(df))
@@ -275,7 +293,7 @@ uwls_fishers_z <- function(df) {
   # Convert back from Fisher's Z to PCC
   uwls_z <- (exp(2 * uwls_est) - 1) / (exp(2 * uwls_est) + 1)
 
-  list(est = uwls_z, t_value = uwls_t_value)
+  list(est = uwls_z, t_value = uwls_t_value, weights = uwls_list$weights)
 }
 
 #' Calculate the simple unweighted mean (OLS)
@@ -289,7 +307,8 @@ uwls_fishers_z <- function(df) {
 #'
 #' @param df [data.frame] The data frame with an 'effect' column
 #' @param effect [vector] The vector of effects. If not provided, defaults to df$effect.
-#' @return [list] A list with properties "est", "se" and "t_value".
+#' @return [list] A list with properties "est", "se", "t_value" and "weights"
+#'   (equal weights 1 / k).
 #' @export
 simple_mean <- function(df, effect = NULL) {
   if (is.null(effect)) effect <- df$effect
@@ -302,7 +321,7 @@ simple_mean <- function(df, effect = NULL) {
   se <- stats::sd(effect) / sqrt(k)
   t_value <- if (is.na(se) || se == 0) NA_real_ else est / se
 
-  list(est = est, se = se, t_value = t_value)
+  list(est = est, se = se, t_value = t_value, weights = rep(1 / k, k))
 }
 
 #' Calculate the conditional FAT-PET-PEESE for one meta-analysis
