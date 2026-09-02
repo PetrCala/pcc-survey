@@ -42,6 +42,18 @@ get_pcc_survey_metaflavours <- function(df, re_method = "ML", re_method_fishers_
     results[[paste0(method, "_t_value")]] <- res$t_value
   }
 
+  # Weight concentration (RSM revision, R2 point 3): share of each estimator's
+  # total weight carried by the most influential primary study and by the three
+  # most influential primary studies, weights summed over a study's estimates.
+  # See R/weight_concentration.R for the decisions. Column names
+  # "<method>_w_top1" / "<method>_w_top3" feed the W_top1 / W_top3 rows of the
+  # estimator summary (Table S1). PET-PEESE has no weight share by design.
+  for (method in names(methods)) {
+    wc <- weight_concentration(methods[[method]]$weights, df$study)
+    results[[paste0(method, "_w_top1")]] <- wc$top1
+    results[[paste0(method, "_w_top3")]] <- wc$top3
+  }
+
   # Explicit SE of the simple mean (sd(effect)/sqrt(k)); recoverable from the
   # t-value but surfaced as its own column at the co-authors' request.
   results$simple_mean_se <- methods$simple_mean$se
@@ -198,11 +210,18 @@ estimator_display_names <- function() {
 #' `MSE_PP` is the mean squared difference of each estimator from PET-PEESE
 #' (requires a `petpeese` column; NA otherwise and for PP itself), and `Flipped`
 #' is the mean estimate over the sign-flipped meta-analyses (requires a `flipped`
-#' flag; NA otherwise).
+#' flag; NA otherwise). Two further rows make up the supplementary Table S1
+#' (Reviewer 2's weight-concentration diagnostic): `W_top1` and `W_top3` are the
+#' mean, across meta-analyses, of the share of the estimator's total weight
+#' carried by its most influential primary study and its three most influential
+#' primary studies (requires `<method>_w_top1` / `<method>_w_top3` columns from
+#' [get_pcc_survey_metaflavours()]; NA otherwise and for PP, which has no
+#' weight share by design; see R/weight_concentration.R).
 #'
 #' @param results_df [data.frame] Results from pcc_survey_analyse() containing
-#'   estimator columns, plus optionally `petpeese` and `flipped` for the
-#'   `MSE_PP` and `Flipped` rows.
+#'   estimator columns, plus optionally `petpeese`, `flipped` and the
+#'   `<method>_w_top1` / `<method>_w_top3` columns for the `MSE_PP`, `Flipped`,
+#'   `W_top1` and `W_top3` rows.
 #' @return [data.frame] Summary table with statistics as rows and estimators as columns
 #' @export
 calculate_estimator_summary <- function(results_df) {
@@ -268,6 +287,21 @@ calculate_estimator_summary <- function(results_df) {
       flipped_mean <- if (length(flipped_vals) == 0) NA_real_ else mean(flipped_vals)
     }
 
+    # Weight-concentration rows ("W_top1" / "W_top3" of Table S1): mean across
+    # meta-analyses of the share of total weight carried by the top 1 / top 3
+    # primary studies. The per-MA shares live in "<method>_w_top1" /
+    # "<method>_w_top3", with <method> the estimator column minus "_est". NA when
+    # those columns are absent and for PET-PEESE ("petpeese"), which has no
+    # weight share (see R/weight_concentration.R).
+    mean_share <- function(suffix) {
+      if (col == "petpeese") return(NA_real_)
+      share_col <- paste0(sub("_est$", "", col), suffix)
+      shares <- individual_metas[[share_col]]
+      if (is.null(shares) || all(is.na(shares))) NA_real_ else mean(shares, na.rm = TRUE)
+    }
+    w_top1 <- mean_share("_w_top1")
+    w_top3 <- mean_share("_w_top3")
+
     # Common values for all cases
     count_val <- as.integer(n_total)
     missing_val <- as.integer(n_missing)
@@ -306,14 +340,16 @@ calculate_estimator_summary <- function(results_df) {
       Mean = mean_val,
       SD = sd_val,
       MSE_PP = mse_pp,
-      Flipped = flipped_mean
+      Flipped = flipped_mean,
+      W_top1 = w_top1,
+      W_top3 = w_top3
     )
   })
 
   # Create data frame with statistics as rows and estimators as columns
   stat_names <- c(
     "Mean", "median", "SD", "count", "minimum", "max", "missing",
-    "skewness", "IQR", "trimmed_mean_10", "MSE_PP", "Flipped"
+    "skewness", "IQR", "trimmed_mean_10", "MSE_PP", "Flipped", "W_top1", "W_top3"
   )
   summary_df <- data.frame(
     Statistic = stat_names,

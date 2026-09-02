@@ -20,6 +20,17 @@
   PET-PEESE; blank for PP itself) and `Flipped` (mean estimate over the
   sign-flipped meta-analyses).
 
+### Added (RSM revision, round 2)
+- Weight-concentration diagnostic requested by Reviewer 2 (point 3): every
+  estimator now returns its normalised per-estimate `weights`, and
+  `weight_concentration()` / `top_study_weight_share()` aggregate them by
+  primary study (the `study` column) and report the share of total weight carried
+  by the most influential study and by the three most influential studies. Per-MA
+  columns `<method>_w_top1` / `<method>_w_top3` are added to the results, and two
+  Table S1 rows `W_top1` / `W_top3` (means across the 172 MAs) to the estimator
+  summary. Decisions recorded in `R/weight_concentration.R`: study level (not
+  estimate level), fractions of total weight, mean across MAs, PET-PEESE blank.
+
 ### Changed (RSM revision follow-up)
 - Added the simple unweighted mean (`simple_mean()`, labelled "Mean") as the
   OLS comparison estimator requested by the reviewers; SE = sd(effect)/sqrt(k),

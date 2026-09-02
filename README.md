@@ -90,7 +90,7 @@ This runs setup, data checks, and the analysis in sequence. Run `make help` to s
 | File | Description |
 | --- | --- |
 | `output/pcc_survey_results.csv` | Main results — statistics for each meta-analysis |
-| `output/estimator_summary.csv` | Summary statistics across all estimators (Table 1) |
+| `output/estimator_summary.csv` | Summary statistics across all estimators (Table 1 and the Table S1 weight-concentration rows `W_top1` / `W_top3`) |
 | `output/smallest_estimate_counts.csv` | Per-estimator "most conservative" (smallest) and negative counts |
 | `output/pcc_combined_dataset.csv` | Combined study-level dataset for the aggregate FAT-PET panel |
 | `output/psb_results.csv` | Publication Selection Bias / ESS analysis results |
@@ -175,7 +175,7 @@ If you need to substitute a different dataset, place it at `data/pcc_survey_data
 
 Everything needed to reproduce the paper's empirical results lives in this repository, in two parts:
 
-- **Main analysis (this R package).** `data/pcc_survey_data.xlsx` together with the code in `R/` reproduces the per-meta-analysis results and Table 1 across the 172 PCC meta-analyses. Run it as in [Quick Start](#quick-start); results are written to `output/` (see [Outputs](#outputs)). `output/estimator_summary.csv` and `output/smallest_estimate_counts.csv` together contain every row of the manuscript's Table 1 — Mean, Median, Std Dev, Smallest, MSE-PP, and Flipped.
+- **Main analysis (this R package).** `data/pcc_survey_data.xlsx` together with the code in `R/` reproduces the per-meta-analysis results and Table 1 across the 172 PCC meta-analyses. Run it as in [Quick Start](#quick-start); results are written to `output/` (see [Outputs](#outputs)). `output/estimator_summary.csv` and `output/smallest_estimate_counts.csv` together contain every row of the manuscript's Table 1 (Mean, Median, Std Dev, Smallest, MSE-PP, and Flipped) plus the two supplementary Table S1 rows `W_top1` and `W_top3`: the mean share of each estimator's total weight carried by its most influential primary study and by its three most influential primary studies (weights summed over a study's estimates; see `R/weight_concentration.R` for the conventions). The per-meta-analysis shares are the `<method>_w_top1` / `<method>_w_top3` columns of `output/pcc_survey_results.csv`.
 - **Secondary statistics (`secondary-stats/`).** Companion analyses provided by co-author Tom Stanley and calculated outside the R pipeline (Stata / Statview / spreadsheets): the survey descriptive statistics, the PSST and aggregate Egger/FAT-PET publication-selection tests, the ICT illustration, and the combined study-level dataset (`PCCcombined.dta`). See [`secondary-stats/README.md`](secondary-stats/README.md) for a file-by-file guide. These are reference and provenance artifacts; they are **not** inputs to the R analysis above.
 
 ## Reproducibility
