@@ -300,20 +300,23 @@ test_that("calculate_estimator_summary computes W_top1 and W_top3 rows (Table S1
     uwls1_est = c(0.16, 0.26, 0.36),
     simple_mean_est = c(0.14, 0.24, 0.34),
     petpeese = c(0.05, 0.15, 0.25),
-    re1_w_top1 = c(0.50, 0.30, 0.10),
-    re1_w_top3 = c(0.90, 0.60, 0.30),
-    uwls1_w_top1 = c(0.60, 0.40, NA),
-    uwls1_w_top3 = c(0.95, 0.70, NA)
+    re1_w_top1_estimate = c(0.50, 0.30, 0.10),
+    re1_w_top3_estimate = c(0.90, 0.60, 0.30),
+    uwls1_w_top1_estimate = c(0.60, 0.40, NA),
+    uwls1_w_top3_estimate = c(0.95, 0.70, NA),
+    # Paper-level shares are carried in the results but not tabulated
+    re1_w_top1_study = c(0.99, 0.99, 0.99),
+    re1_w_top3_study = c(1.00, 1.00, 1.00)
   )
 
   result <- calculate_estimator_summary(df)
 
-  # Mean across meta-analyses of the per-MA shares
-  expect_equal(result[result$Statistic == "W_top1", ]$RE1, mean(c(0.50, 0.30, 0.10)))
-  expect_equal(result[result$Statistic == "W_top3", ]$RE1, mean(c(0.90, 0.60, 0.30)))
+  # Median across meta-analyses of the per-MA estimate-level shares
+  expect_equal(result[result$Statistic == "W_top1", ]$RE1, median(c(0.50, 0.30, 0.10)))
+  expect_equal(result[result$Statistic == "W_top3", ]$RE1, median(c(0.90, 0.60, 0.30)))
   # NA shares are skipped
-  expect_equal(result[result$Statistic == "W_top1", ]$UWLS1, mean(c(0.60, 0.40)))
-  expect_equal(result[result$Statistic == "W_top3", ]$UWLS1, mean(c(0.95, 0.70)))
+  expect_equal(result[result$Statistic == "W_top1", ]$UWLS1, median(c(0.60, 0.40)))
+  expect_equal(result[result$Statistic == "W_top3", ]$UWLS1, median(c(0.95, 0.70)))
   # No share columns for the simple mean -> NA
   expect_true(is.na(result[result$Statistic == "W_top1", ]$Mean))
   # PET-PEESE has no weight share by design (blank in Table S1)
