@@ -55,3 +55,24 @@ test_that("calculate_smallest_estimate_counts errors when no estimator columns",
   df <- data.frame(meta = c("M1", "M2"), foo = c(1, 2))
   expect_error(calculate_smallest_estimate_counts(df))
 })
+
+test_that("calculate_smallest_estimate_counts ignores non-estimator '_est*' columns", {
+  # The weight-share columns end in "_estimate"; only the known point-estimate
+  # columns may enter the contest, in Table 1 order.
+  df <- data.frame(
+    meta = c("M1", "M2"),
+    re1_est = c(0.10, 0.20),
+    hsma_est = c(0.05, 0.30),
+    simple_mean_est = c(0.15, 0.10),
+    re1_w_top1_estimate = c(0.001, 0.002),
+    re1_w_top1_study = c(0.01, 0.02),
+    petpeese = c(-0.5, -0.5)
+  )
+
+  res <- calculate_smallest_estimate_counts(df)
+
+  expect_equal(res$estimator, c("Mean", "RE1", "HS"))
+  expect_equal(sum(res$times_smallest), 2L)
+  expect_equal(res[res$estimator == "HS", ]$times_smallest, 1L)
+  expect_equal(res[res$estimator == "Mean", ]$times_smallest, 1L)
+})

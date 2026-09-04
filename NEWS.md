@@ -25,11 +25,14 @@
   estimator now returns its normalised per-estimate `weights`, and
   `weight_concentration()` / `top_study_weight_share()` aggregate them by
   primary study (the `study` column) and report the share of total weight carried
-  by the most influential study and by the three most influential studies. Per-MA
-  columns `<method>_w_top1` / `<method>_w_top3` are added to the results, and two
-  Table S1 rows `W_top1` / `W_top3` (means across the 172 MAs) to the estimator
-  summary. Decisions recorded in `R/weight_concentration.R`: study level (not
-  estimate level), fractions of total weight, mean across MAs, PET-PEESE blank.
+  by the most heavily weighted estimate(s) and, alternatively, by the most
+  influential primary study (paper). Per-MA columns `<method>_w_top1_estimate` /
+  `<method>_w_top3_estimate` (estimate level) and `<method>_w_top1_study` /
+  `<method>_w_top3_study` (paper level) are added to the results, and two Table
+  S1 rows `W_top1` / `W_top3` (medians across the 172 MAs of the estimate-level
+  shares) to the estimator summary. Decisions recorded in
+  `R/weight_concentration.R`: estimate level in Table S1 (paper level kept in
+  the results), fractions of total weight, median across MAs, PET-PEESE blank.
 
 ### Changed (RSM revision follow-up)
 - Added the simple unweighted mean (`simple_mean()`, labelled "Mean") as the

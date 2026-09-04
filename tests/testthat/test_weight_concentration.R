@@ -32,13 +32,25 @@ test_that("top_study_weight_share rejects negative weights and length mismatches
   expect_error(top_study_weight_share(c(1, 2, 3), c("A", "B"), 1L))
 })
 
-test_that("weight_concentration returns top1 and top3 shares", {
+test_that("top_weight_share at the estimate level ignores study grouping", {
+  w <- c(0.3, 0.4, 0.2, 0.1)
+  study <- c("A", "B", "A", "C")
+  expect_equal(top_weight_share(w, study = NULL, top_n = 1L), 0.4)
+  expect_equal(top_weight_share(w, study = NULL, top_n = 3L), 0.9)
+  # Same weights, paper level: A = 0.5
+  expect_equal(top_weight_share(w, study = study, top_n = 1L), 0.5)
+  expect_equal(top_weight_share(c(NA, 1, 3), study = NULL, top_n = 1L), 0.75)
+})
+
+test_that("weight_concentration returns estimate- and paper-level top1/top3 shares", {
   w <- c(0.5, 0.2, 0.15, 0.1, 0.05)
-  study <- c("A", "B", "C", "D", "E")
+  study <- c("A", "B", "A", "C", "D")
   wc <- weight_concentration(w, study)
-  expect_named(wc, c("top1", "top3"))
-  expect_equal(wc$top1, 0.5)
-  expect_equal(wc$top3, 0.85)
+  expect_named(wc, c("top1_est", "top3_est", "top1_study", "top3_study"))
+  expect_equal(wc$top1_est, 0.5)
+  expect_equal(wc$top3_est, 0.85)
+  expect_equal(wc$top1_study, 0.65)
+  expect_equal(wc$top3_study, 0.95)
 })
 
 test_that("estimators return normalised per-estimate weights with the expected structure", {
@@ -78,7 +90,7 @@ test_that("estimators return normalised per-estimate weights with the expected s
   expect_equal(w_uwlsz, (df$sample_size - 3) / sum(df$sample_size - 3))
 })
 
-test_that("get_pcc_survey_metaflavours reports study-level top-1/top-3 weight shares", {
+test_that("get_pcc_survey_metaflavours reports estimate- and paper-level top-1/top-3 weight shares", {
   df <- data.frame(
     meta = "m",
     study = c("s1", "s1", "s2", "s3"),
@@ -92,17 +104,21 @@ test_that("get_pcc_survey_metaflavours reports study-level top-1/top-3 weight sh
 
   res <- get_pcc_survey_metaflavours(df)
 
-  # Simple mean: s1 carries 2 of 4 equal weights; top 3 covers all studies
-  expect_equal(res$simple_mean_w_top1, 0.5)
-  expect_equal(res$simple_mean_w_top3, 1.0)
+  # Simple mean, estimate level: 1/k and 3/k; paper level: s1 carries 2 of 4
+  expect_equal(res$simple_mean_w_top1_estimate, 0.25)
+  expect_equal(res$simple_mean_w_top3_estimate, 0.75)
+  expect_equal(res$simple_mean_w_top1_study, 0.5)
+  expect_equal(res$simple_mean_w_top3_study, 1.0)
 
-  # HS: s2 has n = 2500 of 3025
-  expect_equal(res$hsma_w_top1, 2500 / 3025)
-  expect_equal(res$hsma_w_top3, 1.0)
+  # HS: the n = 2500 estimate (s2) dominates at both levels
+  expect_equal(res$hsma_w_top1_estimate, 2500 / 3025)
+  expect_equal(res$hsma_w_top3_estimate, 3000 / 3025)
+  expect_equal(res$hsma_w_top1_study, 2500 / 3025)
+  expect_equal(res$hsma_w_top3_study, 1.0)
 
   # All share columns present and within [0, 1]; none for PET-PEESE
-  share_cols <- grep("_w_top[13]$", colnames(res), value = TRUE)
-  expect_length(share_cols, 18)
+  share_cols <- grep("_w_top[13]_(estimate|study)$", colnames(res), value = TRUE)
+  expect_length(share_cols, 36)
   expect_true(all(unlist(res[share_cols]) >= 0 & unlist(res[share_cols]) <= 1))
   expect_false(any(grepl("^petpeese_w_top", colnames(res))))
 })
