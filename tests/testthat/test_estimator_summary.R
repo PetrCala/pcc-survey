@@ -124,7 +124,7 @@ test_that("calculate_estimator_summary has correct column names, order, and incl
   # Check that all statistics are present
   expected_stats <- c(
     "count", "minimum", "max", "missing", "skewness", "median", "IQR",
-    "trimmed_mean_10", "Mean", "SD", "MSE_PP", "Flipped", "W_top1", "W_top3"
+    "trimmed_mean_10", "Mean", "SD", "MSD_PP", "Flipped", "W_top1", "W_top3"
   )
   expect_equal(sort(result$Statistic), sort(expected_stats))
 
@@ -138,7 +138,7 @@ test_that("calculate_estimator_summary has correct column names, order, and incl
   expect_equal(missing_val, as.integer(missing_val)) # Value is an integer
 })
 
-test_that("calculate_estimator_summary computes MSE_PP and Flipped rows", {
+test_that("calculate_estimator_summary computes MSD_PP and Flipped rows", {
   df <- data.frame(
     meta = c("Meta1", "Meta2", "Meta3", "Meta4"),
     re1_est = c(0.10, 0.20, 0.30, 0.40),
@@ -156,21 +156,21 @@ test_that("calculate_estimator_summary computes MSE_PP and Flipped rows", {
 
   result <- calculate_estimator_summary(df)
 
-  # MSE_PP: mean of (estimator - petpeese)^2 across all meta-analyses
+  # MSD_PP: mean of (estimator - petpeese)^2 across all meta-analyses
   expect_equal(
-    result[result$Statistic == "MSE_PP", ]$RE1,
+    result[result$Statistic == "MSD_PP", ]$RE1,
     mean((c(0.10, 0.20, 0.30, 0.40) - c(0.05, 0.15, 0.25, 0.35))^2),
     tolerance = 1e-12
   )
   # PET-PEESE versus itself is undefined (blank in Table 1)
-  expect_true(is.na(result[result$Statistic == "MSE_PP", ]$PP))
+  expect_true(is.na(result[result$Statistic == "MSD_PP", ]$PP))
 
   # Flipped: mean restricted to the sign-flipped MAs (rows 1 and 3)
   expect_equal(result[result$Statistic == "Flipped", ]$RE1, mean(c(0.10, 0.30)))
   expect_equal(result[result$Statistic == "Flipped", ]$PP, mean(c(0.05, 0.25)))
 })
 
-test_that("MSE_PP and Flipped are NA when petpeese/flipped columns are absent", {
+test_that("MSD_PP and Flipped are NA when petpeese/flipped columns are absent", {
   df <- data.frame(
     meta = c("Meta1", "Meta2", "Meta3"),
     re1_est = c(0.11, 0.21, 0.31),
@@ -185,7 +185,7 @@ test_that("MSE_PP and Flipped are NA when petpeese/flipped columns are absent", 
 
   result <- calculate_estimator_summary(df)
 
-  expect_true(all(is.na(result[result$Statistic == "MSE_PP", -1])))
+  expect_true(all(is.na(result[result$Statistic == "MSD_PP", -1])))
   expect_true(all(is.na(result[result$Statistic == "Flipped", -1])))
 })
 
