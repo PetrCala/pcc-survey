@@ -100,7 +100,7 @@ This runs setup, data checks, and the analysis in sequence. Run `make help` to s
 
 ### Online supplement (`make supplement`)
 
-`run_supplement_analysis()` (or `make supplement`) writes one CSV per online-supplement table to `output/supplement/`, rounded to 3 decimals. It prepares the data exactly as the main analysis does (172 meta-analyses, 63,730 PCCs) and uses the same conventions; "mean" always means the mean across meta-analyses, each counting equally. Random steps use fixed seeds. The full run is slow (the Table S9 simulation dominates); `make supplement SUPPLEMENT_CORES=4` forks the simulation across 4 processes on Unix without changing the results, and `SUPPLEMENT_REPS` sets its number of replications.
+`run_supplement_analysis()` (or `make supplement`) writes one CSV per online-supplement table to `output/supplement/`, rounded to 3 decimals. It prepares the data exactly as the main analysis does (172 meta-analyses, 63,730 PCCs) and uses the same conventions; "mean" always means the mean across meta-analyses, each counting equally. Random steps use fixed seeds. The full run is slow (the Table S9 simulation dominates); `make supplement SUPPLEMENT_CORES=4` runs the simulation in 4 worker processes without changing the results, and `SUPPLEMENT_REPS` sets its number of replications.
 
 | File | Description |
 | --- | --- |
