@@ -58,7 +58,11 @@ top_weight_share <- function(weights, study = NULL, top_n = 1L) {
   by_unit <- if (is.null(study)) weights else as.numeric(tapply(weights, study, sum))
   by_unit <- sort(by_unit, decreasing = TRUE)
   n_take <- min(as.integer(top_n), length(by_unit))
-  sum(by_unit[seq_len(n_take)]) / total
+  # The top units summed in sorted order and the total summed in data order
+  # can differ in the last bit, so a share that covers every unit is set to
+  # exactly 1 and the rest are kept within [0, 1].
+  if (n_take == length(by_unit)) return(1)
+  min(1, sum(by_unit[seq_len(n_take)]) / total)
 }
 
 #' Share of total weight carried by the most influential primary studies

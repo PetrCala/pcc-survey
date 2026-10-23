@@ -106,3 +106,34 @@ test_that("fishers_z conversion works correctly with multiple studies", {
   # With these inputs (0.1 to 0.4), the weighted average should be positive
   expect_true(result$est > 0)
 })
+
+test_that("fishers_z leaves out rows without a Fisher's z SE (df <= 1)", {
+  df <- data.frame(
+    effect = c(0.1, 0.2, 0.3, 0.9),
+    meta = "test_meta",
+    study = c("study1", "study2", "study3", "study4")
+  )
+  df$fishers_z <- 0.5 * log((1 + df$effect) / (1 - df$effect))
+  df$fishers_z_se <- c(1 / sqrt(c(49, 99, 149)), NA)
+
+  result <- fishers_z(df, method = "ML")
+  expected <- fishers_z(df[1:3, ], method = "ML")
+
+  expect_equal(result$est, expected$est, tolerance = 1e-12)
+  expect_equal(result$t_value, expected$t_value, tolerance = 1e-12)
+  # One weight per row of df; the excluded row carries NA
+  expect_length(result$weights, 4)
+  expect_true(is.na(result$weights[4]))
+  expect_equal(result$weights[1:3], expected$weights, tolerance = 1e-12)
+})
+
+test_that("fishers_z returns NA when no row has a Fisher's z SE", {
+  df <- data.frame(effect = c(0.1, 0.2), meta = "test_meta", study = c("s1", "s2"))
+  df$fishers_z <- 0.5 * log((1 + df$effect) / (1 - df$effect))
+  df$fishers_z_se <- NA_real_
+
+  result <- fishers_z(df, method = "ML")
+  expect_true(is.na(result$est))
+  expect_true(is.na(result$t_value))
+  expect_true(all(is.na(result$weights)))
+})

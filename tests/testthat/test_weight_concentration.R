@@ -32,6 +32,13 @@ test_that("top_study_weight_share rejects negative weights and length mismatches
   expect_error(top_study_weight_share(c(1, 2, 3), c("A", "B"), 1L))
 })
 
+test_that("top_weight_share is exactly 1 when the top units cover every unit", {
+  # 0.3 + 0.2 + 0.1 and 0.1 + 0.2 + 0.3 differ in the last bit in floating point
+  expect_identical(top_weight_share(c(0.1, 0.2, 0.3), study = NULL, top_n = 3L), 1)
+  expect_identical(top_weight_share(c(0.1, 0.2, 0.3), study = c("A", "B", "C"), top_n = 5L), 1)
+  expect_lte(top_weight_share(c(0.1, 0.2, 0.3, 1e-17), study = NULL, top_n = 3L), 1)
+})
+
 test_that("top_weight_share at the estimate level ignores study grouping", {
   w <- c(0.3, 0.4, 0.2, 0.1)
   study <- c("A", "B", "A", "C")
@@ -86,8 +93,33 @@ test_that("estimators return normalised per-estimate weights with the expected s
 
   # Fisher's z variants carry the weights of the underlying z fit
   expect_equal(sum(fishers_z(df)$weights), 1)
+  # UWLSz weights are the inverse Fisher's z variances, df - 1
   w_uwlsz <- uwls_fishers_z(df)$weights
-  expect_equal(w_uwlsz, (df$sample_size - 3) / sum(df$sample_size - 3))
+  expect_equal(w_uwlsz, (df$dof - 1) / sum(df$dof - 1))
+})
+
+test_that("REz and UWLSz weight shares ignore estimates with df <= 1", {
+  df <- data.frame(
+    meta = "m",
+    study = c("s1", "s1", "s2", "s3"),
+    effect = c(0.10, 0.15, 0.30, 0.05),
+    se = c(0.05, 0.10, 0.02, 0.20),
+    sample_size = c(400, 100, 2500, 8),
+    t_value = c(2, 1.5, 15, 0.25),
+    dof = c(395, 95, 2495, 1)
+  )
+  df <- compute_derived_quantities(df)
+
+  res <- get_pcc_survey_metaflavours(df)
+
+  # s3's only estimate has df = 1 and drops out of UWLSz: weights df - 1 over
+  # the other three estimates
+  w <- c(394, 94, 2494)
+  expect_equal(res$uwlsz_w_top1_study, 2494 / sum(w))
+  expect_equal(res$uwlsz_w_top3_study, 1.0)
+  # Other estimators still use all four estimates
+  expect_equal(res$hsma_w_top3_study, 1.0)
+  expect_equal(res$hsma_w_top1_study, 2500 / 3008)
 })
 
 test_that("get_pcc_survey_metaflavours reports estimate- and paper-level top-1/top-3 weight shares", {
