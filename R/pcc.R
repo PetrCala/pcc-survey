@@ -49,12 +49,14 @@ pcc_se_s2 <- function(df) {
 #' @param effect [vector] The vector of effects. If not provided, defaults to df$effect.
 #' @param se [vector] The vector of SEs. If not provided, defaults to df$se.
 #' @param method [character] The method to use for the RE calculation. Defaults to "ML".
+#' @param control [list] Passed to metafor's `rma()` (e.g. `list(stepadj = 0.5)`
+#'   when Fisher scoring does not converge). Defaults to metafor's settings.
 #' @return [list] A list with properties "est", "t_value", the heterogeneity
 #'   statistics "tau2" (heterogeneity variance), "Q" (Cochran's Q) and "I2", and
 #'   "weights": the per-estimate random-effects weights 1 / (se^2 + tau2),
 #'   normalised to sum to 1 (see [weight_concentration()]).
 #' @export
-re <- function(df, effect = NULL, se = NULL, method = "ML") {
+re <- function(df, effect = NULL, se = NULL, method = "ML", control = list()) {
   if (is.null(effect)) effect <- df$effect
   if (is.null(se)) se <- df$se
   stopifnot(length(effect) == nrow(df), length(se) == nrow(df))
@@ -73,7 +75,8 @@ re <- function(df, effect = NULL, se = NULL, method = "ML") {
   re_ <- metafor::rma(
     yi = re_data_$yi,
     sei = re_data_$sei,
-    method = method
+    method = method,
+    control = control
   )
 
   re_est <- re_$beta[1]
@@ -260,12 +263,13 @@ fishers_z_rows <- function(df) {
 #'
 #' @param df [data.frame] The data frame with pre-computed 'fishers_z' and 'fishers_z_se' columns
 #' @param method [character] Random effects method for Fisher's z calculation (default: "ML")
+#' @param control [list] Passed to metafor's `rma()` (see [re()]).
 #' @return [list] A list with properties "est", "t_value" and "weights" (the
 #'   random-effects weights of the underlying Fisher's z fit, normalised over the
 #'   rows used; one per row of `df`, NA for the rows left out). "est" and
 #'   "t_value" are NA when no row is usable.
 #' @export
-fishers_z <- function(df, method = "ML") {
+fishers_z <- function(df, method = "ML", control = list()) {
   keep <- fishers_z_rows(df)
   weights <- rep(NA_real_, nrow(df))
   if (!any(keep)) {
@@ -279,7 +283,7 @@ fishers_z <- function(df, method = "ML") {
     study = df$study[keep]
   )
 
-  re_list <- re(df = re_data, method = method)
+  re_list <- re(df = re_data, method = method, control = control)
   re_est <- re_list$est
   re_t_value <- re_list$t_value
   weights[keep] <- re_list$weights

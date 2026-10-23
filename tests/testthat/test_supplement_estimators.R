@@ -122,3 +122,18 @@ test_that("results_estimates labels the per-MA columns as in Table 1", {
   expect_named(out, c("RE1", "HS", "PP"))
   expect_equal(out$RE1, 1:2)
 })
+
+test_that("meta_estimates retries a non-converging RE fit with a halved step", {
+  df <- make_supplement_data(n_meta = 1, seed = 6)
+  controls <- list()
+  local_mocked_bindings(re = function(df, effect = NULL, se = NULL, method = "ML", control = list()) {
+    controls[[length(controls) + 1]] <<- control
+    if (length(control) == 0) stop("Fisher scoring algorithm did not converge.")
+    list(est = 0.5, t_value = 1, tau2 = 0, weights = rep(1 / nrow(df), nrow(df)))
+  })
+  est <- meta_estimates(df, c("re1", "fishers_z"))
+  expect_equal(est[["re1"]], 0.5)
+  expect_equal(est[["fishers_z"]], tanh(0.5))
+  expect_equal(controls[[1]], list())
+  expect_equal(controls[[2]], list(stepadj = 0.5, maxiter = 1000))
+})
