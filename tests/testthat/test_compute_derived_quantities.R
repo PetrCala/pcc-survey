@@ -54,8 +54,22 @@ test_that("compute_derived_quantities computes fishers_z_se correctly", {
   df <- make_valid_df()
   result <- compute_derived_quantities(df)
 
-  expected <- 1 / sqrt(df$sample_size - 3)
+  # Fisher's adjustment for a partial correlation: Var(z) = 1 / (df - 1)
+  expected <- 1 / sqrt(df$dof - 1)
   expect_equal(result$fishers_z_se, expected, tolerance = 1e-10)
+})
+
+test_that("compute_derived_quantities leaves fishers_z_se NA where dof <= 1 only", {
+  df <- make_valid_df()
+  df$dof <- c(0.5, 1, 150)
+  result <- compute_derived_quantities(df)
+
+  expect_true(all(is.na(result$fishers_z_se[1:2])))
+  expect_equal(result$fishers_z_se[3], 1 / sqrt(149), tolerance = 1e-10)
+  # The other derived columns stay defined for every row
+  for (col in c("se_s1", "se_s2", "fishers_z", "pcc3")) {
+    expect_true(all(is.finite(result[[col]])), info = col)
+  }
 })
 
 test_that("compute_derived_quantities computes pcc3 correctly", {

@@ -2,6 +2,15 @@
 
 ## Version 0.0.0.9000 (Development)
 
+### Changed (RSM revision, round 2: co-author edits of October 2026)
+- Fisher's z now uses the partial-correlation variance 1 / (df - 1) (Fisher's
+  degrees-of-freedom adjustment, as in Stanley, Doucouliagos & Havranek 2024)
+  instead of 1 / (n - 3). It is undefined for df <= 1, so REz and UWLSz leave out
+  those estimates (all other estimators keep them); `compute_derived_quantities()`
+  sets `fishers_z_se` to NA there and the run log reports how many estimates
+  were left out. `fishers_z()` and `uwls_fishers_z()` skip those rows and return
+  NA weights for them.
+
 ### Added (RSM revision)
 - UWLSz estimator: UWLS on the Fisher's z scale (`uwls_fishers_z()`), included in
   the per-MA results and the estimator summary (Table 1).

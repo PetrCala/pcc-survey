@@ -456,7 +456,11 @@ validate_pcc_observations <- function(df) {
     }
   }
 
-  # Combined universal validity mask
+  # Combined universal validity mask. The sample_size > 3 condition dates from
+  # the first revision's Fisher's z variance 1 / (n - 3); it is kept, although
+  # Fisher's z now uses 1 / (df - 1), so that the sample stays the paper's
+  # 63,730 estimates. Estimates with df <= 1 are left out of REz and UWLSz only
+  # (see compute_derived_quantities()).
   valid <- !is.na(df$effect) & is.finite(df$effect) & abs(df$effect) < 1 &
            !is.na(df$se) & is.finite(df$se) & df$se > 0 &
            !is.na(df$t_value) & is.finite(df$t_value) &
@@ -485,7 +489,9 @@ validate_pcc_observations <- function(df) {
 #'
 #' All derived quantities are mathematically guaranteed to be finite when the
 #' universal validity conditions hold (effect finite with |effect| < 1, se > 0,
-#' dof > 0, sample_size > 3, t_value finite).
+#' dof > 0, sample_size > 3, t_value finite), except `fishers_z_se`, which is
+#' 1 / sqrt(dof - 1) and therefore NA for estimates with dof <= 1. Those
+#' estimates are dropped from the Fisher's z estimators (REz, UWLSz) only.
 #'
 #' @param df [data.frame] Validated PCC data frame
 #' @return [data.frame] Data frame with derived quantity columns added
@@ -505,17 +511,26 @@ compute_derived_quantities <- function(df) {
   # Fisher's Z = 0.5 * log((1 + r_p) / (1 - r_p))
   df$fishers_z <- 0.5 * log((1 + r_p) / (1 - r_p))
 
-  # Fisher's Z SE = 1 / sqrt(n - 3)
-  df$fishers_z_se <- 1 / sqrt(df$sample_size - 3)
+  # Fisher's Z SE for a partial correlation. Fisher's degrees-of-freedom
+  # adjustment gives Var(z) = 1 / (df - 1) (Stanley, Doucouliagos & Havranek
+  # 2024; van Aert & Goos 2023; metafor's "ZPCOR"). It is undefined for
+  # df <= 1, so those estimates get NA here and are left out of REz and UWLSz
+  # only; every other estimator keeps them. (The first revision used
+  # 1 / (n - 3), the variance for a bivariate correlation.)
+  fz_ok <- df$dof > 1
+  df$fishers_z_se <- NA_real_
+  df$fishers_z_se[fz_ok] <- 1 / sqrt(df$dof[fz_ok] - 1)
 
   # PCC3 for UWLS+3: t / sqrt(t^2 + dof + 3)
   df$pcc3 <- df$t_value / sqrt(df$t_value^2 + df$dof + 3)
 
-  # Assert all derived columns are finite and non-NA
+  # Assert all derived columns are finite and non-NA (fishers_z_se only where
+  # df > 1; it is NA by design elsewhere)
   derived_cols <- c("se_s1", "se_s2", "fishers_z", "fishers_z_se", "pcc3")
   for (col in derived_cols) {
-    if (any(is.na(df[[col]])) || any(!is.finite(df[[col]]))) {
-      n_bad <- sum(is.na(df[[col]]) | !is.finite(df[[col]]))
+    vals <- if (col == "fishers_z_se") df[[col]][fz_ok] else df[[col]]
+    if (any(is.na(vals)) || any(!is.finite(vals))) {
+      n_bad <- sum(is.na(vals) | !is.finite(vals))
       cli::cli_abort(paste0(
         "Bug: ", n_bad, " non-finite/NA values in derived column '", col,
         "' after validation. This should not happen."
@@ -525,6 +540,13 @@ compute_derived_quantities <- function(df) {
 
   logger::log_info(paste("Computed derived quantities for", nrow(df), "observations.",
                          "All", length(derived_cols), "derived columns validated."))
+  if (any(!fz_ok)) {
+    logger::log_info(paste(
+      "Fisher's z: excluding", sum(!fz_ok), "estimates with df <= 1 (in",
+      length(unique(df$meta[!fz_ok])), "meta-analyses) from REz and UWLSz,",
+      "for which 1 / (df - 1) is not a valid variance."
+    ))
+  }
 
   df
 }

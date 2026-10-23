@@ -236,36 +236,58 @@ waiv2 <- function(df, effect = NULL, se = NULL) {
   list(est = est, t_value = t_value)
 }
 
+#' Rows usable by the Fisher's z estimators
+#'
+#' `fishers_z_se` is 1 / sqrt(df - 1) and NA for estimates with df <= 1 (see
+#' compute_derived_quantities()); REz and UWLSz use only the rows where it is
+#' available.
+#'
+#' @param df [data.frame] The data frame with 'fishers_z' and 'fishers_z_se' columns
+#' @return [logical] One flag per row, TRUE where the row enters REz and UWLSz.
+#' @keywords internal
+fishers_z_rows <- function(df) {
+  stopifnot("fishers_z" %in% colnames(df))
+  stopifnot("fishers_z_se" %in% colnames(df))
+  !is.na(df$fishers_z_se)
+}
+
 #' Calculate Fisher's z
 #'
 #' Uses pre-computed fishers_z and fishers_z_se columns from
-#' compute_derived_quantities(). Assumes all inputs are valid.
+#' compute_derived_quantities(). Rows with an NA `fishers_z_se` (df <= 1) are
+#' left out. Assumes all other inputs are valid.
 #' Use validate_pcc_observations() to ensure this before calling.
 #'
 #' @param df [data.frame] The data frame with pre-computed 'fishers_z' and 'fishers_z_se' columns
 #' @param method [character] Random effects method for Fisher's z calculation (default: "ML")
 #' @return [list] A list with properties "est", "t_value" and "weights" (the
-#'   random-effects weights of the underlying Fisher's z fit, normalised).
+#'   random-effects weights of the underlying Fisher's z fit, normalised over the
+#'   rows used; one per row of `df`, NA for the rows left out). "est" and
+#'   "t_value" are NA when no row is usable.
 #' @export
 fishers_z <- function(df, method = "ML") {
-  stopifnot("fishers_z" %in% colnames(df))
-  stopifnot("fishers_z_se" %in% colnames(df))
+  keep <- fishers_z_rows(df)
+  weights <- rep(NA_real_, nrow(df))
+  if (!any(keep)) {
+    return(list(est = NA_real_, t_value = NA_real_, weights = weights))
+  }
 
   re_data <- data.frame(
-    effect = df$fishers_z,
-    se = df$fishers_z_se,
-    meta = df$meta,
-    study = df$study
+    effect = df$fishers_z[keep],
+    se = df$fishers_z_se[keep],
+    meta = df$meta[keep],
+    study = df$study[keep]
   )
 
   re_list <- re(df = re_data, method = method)
   re_est <- re_list$est
   re_t_value <- re_list$t_value
+  weights[keep] <- re_list$weights
 
   # Convert back from Fisher's Z to PCC
   re_z <- (exp(2 * re_est) - 1) / (exp(2 * re_est) + 1)
 
-  list(est = re_z, t_value = re_t_value, weights = re_list$weights)
+  list(est = re_z, t_value = re_t_value, weights = weights)
 }
 
 #' Calculate UWLS on Fisher's z (UWLSz)
@@ -274,26 +296,33 @@ fishers_z <- function(df, method = "ML") {
 #' Fisher's-z-transformed effects and back-transforms the estimate to the PCC scale.
 #'
 #' Uses pre-computed fishers_z and fishers_z_se columns from
-#' compute_derived_quantities(). Assumes all inputs are valid.
+#' compute_derived_quantities(). Rows with an NA `fishers_z_se` (df <= 1) are
+#' left out. Assumes all other inputs are valid.
 #' Use validate_pcc_observations() to ensure this before calling.
 #'
 #' @param df [data.frame] The data frame with pre-computed 'fishers_z' and 'fishers_z_se' columns
 #' @return [list] A list with properties "est", "t_value" and "weights" (the
-#'   inverse-variance weights of the underlying Fisher's z fit, i.e. n - 3,
-#'   normalised).
+#'   inverse-variance weights of the underlying Fisher's z fit, i.e. df - 1,
+#'   normalised over the rows used; one per row of `df`, NA for the rows left
+#'   out). "est" and "t_value" are NA when no row is usable.
 #' @export
 uwls_fishers_z <- function(df) {
-  stopifnot("fishers_z" %in% colnames(df))
-  stopifnot("fishers_z_se" %in% colnames(df))
+  keep <- fishers_z_rows(df)
+  weights <- rep(NA_real_, nrow(df))
+  if (!any(keep)) {
+    return(list(est = NA_real_, t_value = NA_real_, weights = weights))
+  }
 
-  uwls_list <- uwls(df, effect = df$fishers_z, se = df$fishers_z_se)
+  uwls_list <- uwls(df[keep, , drop = FALSE],
+                    effect = df$fishers_z[keep], se = df$fishers_z_se[keep])
   uwls_est <- uwls_list$est
   uwls_t_value <- uwls_list$t_value
+  weights[keep] <- uwls_list$weights
 
   # Convert back from Fisher's Z to PCC
   uwls_z <- (exp(2 * uwls_est) - 1) / (exp(2 * uwls_est) + 1)
 
-  list(est = uwls_z, t_value = uwls_t_value, weights = uwls_list$weights)
+  list(est = uwls_z, t_value = uwls_t_value, weights = weights)
 }
 
 #' Calculate the simple unweighted mean (OLS)

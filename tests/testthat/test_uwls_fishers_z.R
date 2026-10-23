@@ -57,3 +57,26 @@ test_that("uwls_fishers_z matches manual UWLS-on-z then back-transform", {
   result <- uwls_fishers_z(df)
   expect_equal(result$est, expected, tolerance = 1e-10)
 })
+
+test_that("uwls_fishers_z leaves out rows without a Fisher's z SE (df <= 1)", {
+  df <- make_uwlsz_df(c(0.1, 0.25, 0.35, 0.9), c(60, 120, 180, 5))
+  df$fishers_z_se[4] <- NA
+
+  result <- uwls_fishers_z(df)
+  expected <- uwls_fishers_z(df[1:3, ])
+
+  expect_equal(result$est, expected$est, tolerance = 1e-12)
+  expect_length(result$weights, 4)
+  expect_true(is.na(result$weights[4]))
+  expect_equal(result$weights[1:3], expected$weights, tolerance = 1e-12)
+  expect_equal(sum(result$weights, na.rm = TRUE), 1)
+})
+
+test_that("uwls_fishers_z returns NA when no row has a Fisher's z SE", {
+  df <- make_uwlsz_df(c(0.1, 0.2), c(60, 120))
+  df$fishers_z_se <- NA_real_
+
+  result <- uwls_fishers_z(df)
+  expect_true(is.na(result$est))
+  expect_true(all(is.na(result$weights)))
+})
