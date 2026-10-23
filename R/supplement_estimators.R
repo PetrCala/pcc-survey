@@ -60,8 +60,10 @@ results_estimates <- function(results) {
 #'
 #' Runs the estimator functions of R/pcc.R on one meta-analysis and returns
 #' their point estimates. With the defaults the values equal the per-MA results
-#' behind Table 1. A failed fit (e.g. a tau2 estimator that does not converge,
-#' or too few estimates left) gives NA for that estimator.
+#' behind Table 1. When metafor's Fisher scoring does not converge for RE1, RE2
+#' or REz, the fit is retried with its documented remedy, a halved step
+#' (`control = list(stepadj = 0.5, maxiter = 1000)`). A fit that still fails
+#' (or has too few estimates left) gives NA for that estimator.
 #'
 #' @param df [data.frame] One meta-analysis after [compute_derived_quantities()].
 #' @param estimators [character] Estimator keys to compute (see
@@ -89,15 +91,19 @@ meta_estimates <- function(df, estimators = names(supplement_estimators()),
   hs_df <- df
   if (hs_weights == "dof") hs_df$sample_size <- df$dof
 
+  # Default metafor settings first, then a halved Fisher scoring step
+  with_retry <- function(fit) {
+    tryCatch(fit(list()), error = function(e) fit(list(stepadj = 0.5, maxiter = 1000)))
+  }
   fits <- list(
     simple_mean = function() simple_mean(df)$est,
-    re1 = function() re(df, se = df$se_s1, method = re_method)$est,
-    re2 = function() re(df, se = df$se_s2, method = re_method)$est,
+    re1 = function() with_retry(function(ctl) re(df, se = df$se_s1, method = re_method, control = ctl)$est),
+    re2 = function() with_retry(function(ctl) re(df, se = df$se_s2, method = re_method, control = ctl)$est),
     uwls1 = function() uwls(df, se = df$se_s1)$est,
     uwls2 = function() uwls(df, se = df$se_s2)$est,
     uwls3 = function() uwls3(df)$est,
     hsma = function() hsma(hs_df)$est,
-    fishers_z = function() fishers_z(df, method = re_method)$est,
+    fishers_z = function() with_retry(function(ctl) fishers_z(df, method = re_method, control = ctl)$est),
     uwlsz = function() uwls_fishers_z(df)$est,
     petpeese = function() fat_pet_peese(df, se = df$se_s1, alpha = 0.1)$est
   )
