@@ -126,9 +126,11 @@ as_column_matrix <- function(x, k, b) {
 #' Random-effects estimates for many samples at once
 #'
 #' Fits the random-effects model to each column of `y`, with tau2 estimated by
-#' maximum likelihood (Fisher scoring started from the DerSimonian-Laird value,
-#' truncated at zero) as in metafor's `rma(method = "ML")`. Rows with an NA
-#' effect or variance are left out of their column.
+#' maximum likelihood as in metafor's `rma(method = "ML")`: Fisher scoring
+#' started from the DerSimonian-Laird value and truncated at zero, with
+#' step halving, and a direct one-dimensional maximisation of the likelihood
+#' for any column not converged after `max_iter` steps. Rows with an NA effect
+#' or variance are left out of their column.
 #'
 #' @param y [matrix|numeric] Effects, one sample per column.
 #' @param v [matrix|numeric] Sampling variances, same shape as `y` (a vector of
@@ -137,10 +139,11 @@ as_column_matrix <- function(x, k, b) {
 #'   weight in the pooled estimate (Table S3 divides by the study's number of
 #'   estimates). tau2 is estimated without it.
 #' @param tol [numeric] Convergence tolerance on the change in tau2.
-#' @param max_iter [integer] Maximum number of Fisher scoring steps.
+#' @param max_iter [integer] Fisher scoring steps before the direct
+#'   maximisation takes over.
 #' @return [list] `est` (pooled estimate per column) and `tau2`.
 #' @keywords internal
-re_matrix <- function(y, v, mult = NULL, tol = 1e-10, max_iter = 1000L) {
+re_matrix <- function(y, v, mult = NULL, tol = 1e-10, max_iter = 100L) {
   y <- as.matrix(y)
   k <- nrow(y)
   b <- ncol(y)
@@ -213,8 +216,27 @@ re_matrix <- function(y, v, mult = NULL, tol = 1e-10, max_iter = 1000L) {
     active <- active[!done]
     cur <- list(ll = nxt$ll[!done], step = nxt$step[!done])
   }
-  if (length(active) > 0) {
-    logger::log_warn(paste("re_matrix: ML tau2 did not converge for", length(active), "samples"))
+  # Scoring crawls, or stalls on a flat shoulder of the likelihood, when the
+  # expected information far exceeds the likelihood's curvature. As metafor
+  # does, a positive tau2 that is less likely than tau2 = 0 is not accepted.
+  # Those columns and any not converged are maximised directly: the ML tau2 is
+  # a weighted average of (y_i - mu)^2 - v_i, so it lies in [0, range(y)^2].
+  fit_cols <- which(n_obs > 1 & tau2 > 0)
+  if (length(fit_cols) > 0) {
+    shoulder <- fit_cols[fit_at(fit_cols, rep(0, length(fit_cols)))$ll > fit_at(fit_cols, tau2[fit_cols])$ll]
+    active <- union(active, shoulder)
+  }
+  for (j in active) {
+    kk <- keep[, j]
+    yj <- y[kk, j]
+    vj <- v[kk, j]
+    ll_j <- function(t2) {
+      w <- 1 / (vj + t2)
+      -0.5 * sum(log(vj + t2)) - 0.5 * sum(w * (yj - sum(w * yj) / sum(w))^2)
+    }
+    opt <- stats::optimize(ll_j, c(0, max(diff(range(yj))^2, 1e-12)), maximum = TRUE, tol = 1e-14)
+    candidates <- c(tau2[j], 0, opt$maximum)
+    tau2[j] <- candidates[which.max(vapply(candidates, ll_j, numeric(1)))]
   }
 
   w <- ind / (v + rep(tau2, each = k))

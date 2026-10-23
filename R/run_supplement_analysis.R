@@ -123,6 +123,7 @@ run_supplement_analysis <- function(config_path = NULL, output_dir = NULL,
 
   out <- list()
   for (id in tables) {
+    gc(verbose = FALSE)
     t0 <- Sys.time()
     logger::log_info(paste("Supplement: computing", id))
     out[[id]] <- builders[[id]]()
