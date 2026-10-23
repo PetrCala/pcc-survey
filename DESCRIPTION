@@ -16,6 +16,7 @@ Imports:
     logger,
     memoise,
     metafor,
+    parallel,
     readxl,
     stats,
     tools,
