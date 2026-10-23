@@ -88,7 +88,7 @@ simulate_pccs <- function(design, n_reps, selection_share) {
 #'   `estimator`, `mean_est`, `bias`, `rmse` and `n_valid` (replications where
 #'   the estimator is defined).
 #' @keywords internal
-simulate_meta_analysis <- function(design, replications, selection, seed, max_cells = 2e6) {
+simulate_meta_analysis <- function(design, replications, selection, seed, max_cells = 1e6) {
   set.seed(seed)
   k <- length(design$dof)
   block <- max(1L, as.integer(floor(max_cells / k)))
@@ -114,6 +114,11 @@ simulate_meta_analysis <- function(design, replications, selection, seed, max_ce
       sum_est <- sum_est + colSums(est, na.rm = TRUE)
       n_valid <- n_valid + colSums(!is.na(est))
       done <- done + b
+      # Free the block before the next one: forked workers inherit the parent's
+      # garbage-collection threshold, which can be several GB after reading the
+      # data, and would otherwise pile up blocks before collecting.
+      rm(r, t_value, est, err)
+      gc(verbose = FALSE)
     }
     data.frame(
       condition = cond,
@@ -145,7 +150,8 @@ simulate_meta_analysis <- function(design, replications, selection, seed, max_ce
 #'   positive significance.
 #' @param seed [integer] Base seed; meta-analysis j uses `seed + j`.
 #' @param cores [integer] Number of forked processes (Unix only; 1 runs
-#'   serially). The results do not depend on it.
+#'   serially). The results do not depend on it. Each worker needs a few hundred
+#'   MB on top of the main R process.
 #' @param max_cells [numeric] Memory cap, see [simulate_meta_analysis()].
 #' @return [data.frame] One row per condition and estimator: `condition`,
 #'   `selection_share`, `estimator`, `true_mean` (mean true effect across
@@ -154,7 +160,7 @@ simulate_meta_analysis <- function(design, replications, selection, seed, max_ce
 #' @export
 run_calibrated_simulation <- function(pcc_df, replications = 2000L,
                                       selection = c(none = 0, moderate = 0.5, strong = 0.75),
-                                      seed = 2026L, cores = 1L, max_cells = 2e6) {
+                                      seed = 2026L, cores = 1L, max_cells = 1e6) {
   stopifnot(!is.null(names(selection)), all(selection >= 0 & selection <= 1))
   designs <- lapply(split(pcc_df, pcc_df$meta), simulation_design)
   n_dropped <- sum(vapply(designs, `[[`, numeric(1), "n_dropped"))

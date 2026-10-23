@@ -137,3 +137,18 @@ test_that("meta_estimates retries a non-converging RE fit with a halved step", {
   expect_equal(controls[[1]], list())
   expect_equal(controls[[2]], list(stepadj = 0.5, maxiter = 1000))
 })
+
+test_that("re_matrix does not stop on a flat shoulder of the likelihood", {
+  # The ML log-likelihood of this sample falls monotonically from tau2 = 0 but
+  # is nearly flat around 0.0017, where plain Fisher scoring stalls.
+  y <- c(0.0995, 0.3389, 0.1244, 0.1564, 0.0835, 0.3628, 0.4027, 0.2274, 0.2661, 0.2601, 0.1954, -0.1301)
+  v <- c(0.0013, 0.0136, 0.0007, 0.0017, 0.0017, 0.0341, 0.0420, 0.0067, 0.0087, 0.0166, 0.0054, 0.0076)
+  ll <- function(t2) {
+    w <- 1 / (v + t2)
+    -0.5 * sum(log(v + t2)) - 0.5 * sum(w * (y - sum(w * y) / sum(w))^2)
+  }
+  fit <- re_matrix(y, v)
+  grid <- seq(0, 0.05, by = 1e-5)
+  expect_equal(fit$tau2, grid[which.max(vapply(grid, ll, numeric(1)))], tolerance = 1e-5)
+  expect_gte(ll(fit$tau2), max(vapply(grid, ll, numeric(1))) - 1e-10)
+})
