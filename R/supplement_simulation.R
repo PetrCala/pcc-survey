@@ -24,7 +24,10 @@
 # * Each estimator's bias and RMSE are computed per meta-analysis over the
 #   replications and then averaged across meta-analyses (each counts equally).
 # * Each meta-analysis has its own seed (`seed` + its position in alphabetical
-#   order), so the results do not depend on `cores`.
+#   order), so the results do not depend on `cores`. Parallel runs use fresh
+#   worker processes (a socket cluster) rather than forks: a fork can end up
+#   copying the main process's memory, which is several GB after reading the
+#   data.
 
 #' Simulation design of one meta-analysis
 #'
@@ -114,9 +117,8 @@ simulate_meta_analysis <- function(design, replications, selection, seed, max_ce
       sum_est <- sum_est + colSums(est, na.rm = TRUE)
       n_valid <- n_valid + colSums(!is.na(est))
       done <- done + b
-      # Free the block before the next one: forked workers inherit the parent's
-      # garbage-collection threshold, which can be several GB after reading the
-      # data, and would otherwise pile up blocks before collecting.
+      # Free the block before the next one, so that memory stays bounded by
+      # one block whatever garbage-collection threshold the process has.
       rm(r, t_value, est, err)
       gc(verbose = FALSE)
     }
@@ -149,9 +151,8 @@ simulate_meta_analysis <- function(design, replications, selection, seed, max_ce
 #' @param selection [numeric] Named shares of estimates subject to selection for
 #'   positive significance.
 #' @param seed [integer] Base seed; meta-analysis j uses `seed + j`.
-#' @param cores [integer] Number of forked processes (Unix only; 1 runs
-#'   serially). The results do not depend on it. Each worker needs a few hundred
-#'   MB on top of the main R process.
+#' @param cores [integer] Number of worker processes (1 runs in this process).
+#'   The results do not depend on it.
 #' @param max_cells [numeric] Memory cap, see [simulate_meta_analysis()].
 #' @return [data.frame] One row per condition and estimator: `condition`,
 #'   `selection_share`, `estimator`, `true_mean` (mean true effect across
@@ -170,17 +171,8 @@ run_calibrated_simulation <- function(pcc_df, replications = 2000L,
     paste0("(", n_dropped, " estimates with df <= 1 left out of the design)")
   ))
 
-  run_one <- function(j) {
-    simulate_meta_analysis(designs[[j]], replications, selection, seed + j, max_cells)
-  }
-  idx <- seq_along(designs)
-  per_meta <- if (cores > 1L && .Platform$OS.type == "unix") {
-    parallel::mclapply(idx, run_one, mc.cores = cores)
-  } else {
-    lapply(idx, run_one)
-  }
-  failed <- vapply(per_meta, inherits, logical(1), "try-error")
-  if (any(failed)) cli::cli_abort("Simulation failed for {sum(failed)} meta-analyses")
+  per_meta <- simulate_designs(designs, replications, selection, seed + seq_along(designs),
+                               max_cells, cores)
 
   mu <- vapply(designs, `[[`, numeric(1), "mu")
   all_rows <- do.call(rbind, Map(function(d, m) cbind(d, mu = m), per_meta, mu))
@@ -203,4 +195,32 @@ run_calibrated_simulation <- function(pcc_df, replications = 2000L,
   }))
   rownames(out) <- NULL
   out
+}
+
+# Set up a fresh worker process: the main process's library paths, then this
+# package (the installed copy, or the source checkout when it was loaded with
+# pkgload::load_all()).
+start_simulation_worker <- function(package_path, lib_paths) {
+  .libPaths(lib_paths)
+  if (dir.exists(file.path(package_path, "Meta"))) {
+    loadNamespace("pccsurvey", lib.loc = dirname(package_path))
+  } else {
+    pkgload::load_all(package_path, quiet = TRUE)
+  }
+  invisible(TRUE)
+}
+
+# simulate_meta_analysis() for every design, in this process or in `cores`
+# worker processes
+simulate_designs <- function(designs, replications, selection, seeds, max_cells, cores) {
+  more <- list(replications = replications, selection = selection, max_cells = max_cells)
+  if (cores <= 1L) {
+    return(Map(simulate_meta_analysis, design = designs, seed = seeds, MoreArgs = more))
+  }
+  cl <- parallel::makePSOCKcluster(cores, rscript_args = "--vanilla")
+  on.exit(parallel::stopCluster(cl), add = TRUE)
+  parallel::clusterCall(cl, start_simulation_worker,
+                        normalizePath(getNamespaceInfo("pccsurvey", "path")), .libPaths())
+  parallel::clusterMap(cl, simulate_meta_analysis, design = designs, seed = seeds,
+                       MoreArgs = more, .scheduling = "dynamic")
 }

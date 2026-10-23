@@ -7,8 +7,8 @@
 # is invoked from a different working directory.
 PROJECT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 RSCRIPT ?= Rscript
-# Online-supplement run: simulation replications (Table S9) and forked
-# processes for the simulation (Unix only; the results do not depend on it).
+# Online-supplement run: simulation replications (Table S9) and worker
+# processes for the simulation (the results do not depend on it).
 SUPPLEMENT_REPS ?= 2000
 SUPPLEMENT_CORES ?= 1
 

@@ -64,7 +64,8 @@ supplement_table_files <- function() {
 #' @param n_boot [integer] Bootstrap resamples (Table S4).
 #' @param n_draws [integer] Random one-estimate-per-study draws (Table S3).
 #' @param seed [integer] Base seed.
-#' @param cores [integer] Forked processes for the simulation (Unix only).
+#' @param cores [integer] Worker processes for the simulation (the results do not
+#'   depend on it).
 #' @param data_dir [character] Directory containing the data file.
 #' @return [list] The tables, invisibly, named by table id.
 #' @export

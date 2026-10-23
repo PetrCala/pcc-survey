@@ -44,8 +44,8 @@ test_that("run_calibrated_simulation is reproducible and shows selection bias", 
   expect_lt(mean_bias[1], mean_bias[3])
 })
 
-test_that("run_calibrated_simulation results do not depend on block size or cores", {
-  skip_on_os("windows")
+test_that("run_calibrated_simulation results do not depend on the number of workers", {
+  skip_on_cran()
   df <- make_supplement_data(n_meta = 2, seed = 33)
   a <- run_calibrated_simulation(df, replications = 12, seed = 2, selection = c(none = 0, all = 1))
   b <- run_calibrated_simulation(df, replications = 12, seed = 2, selection = c(none = 0, all = 1),

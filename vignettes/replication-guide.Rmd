@@ -253,7 +253,7 @@ psb_results <- run_psb_analysis()
 # per table in output/supplement/ (slow: the Table S9 simulation dominates)
 supplement <- run_supplement_analysis()
 
-# Fork the simulation across 4 processes (Unix; same results), or run a quick
+# Run the simulation in 4 worker processes (same results), or run a quick
 # check with fewer simulation replications
 supplement <- run_supplement_analysis(cores = 4)
 quick <- run_supplement_analysis(replications = 50, output_dir = "output/supplement-quick")
