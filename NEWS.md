@@ -10,6 +10,21 @@
   sets `fishers_z_se` to NA there and the run log reports how many estimates
   were left out. `fishers_z()` and `uwls_fishers_z()` skip those rows and return
   NA weights for them.
+- Weight concentration is now reported at the primary-study level, as in the
+  revised paper: the `W_top1` / `W_top3` rows of the estimator summary (the
+  paper's Appendix Table 1) are the means across meta-analyses of the
+  `<method>_w_top1_study` / `<method>_w_top3_study` shares, where a study's
+  weight is the sum of its estimates' weights. This replaces the estimate-level
+  medians of the previous round; the estimate-level columns stay in the per-MA
+  results for reference.
+
+### Added (RSM revision, round 2: co-author edits of October 2026)
+- `calculate_weight_shares()` and `save_weight_shares()`
+  write `output/weight_concentration.csv`, the online supplement's Table S1: for
+  each estimator, the mean, median and 25th / 75th percentiles across
+  meta-analyses of the study-level top-1 and top-3 weight shares, plus an
+  "Equal study weights" benchmark row (1 / k and min(3, k) / k).
+- `n_studies` (number of distinct primary studies) in the per-MA results.
 
 ### Added (RSM revision)
 - UWLSz estimator: UWLS on the Fisher's z scale (`uwls_fishers_z()`), included in

@@ -187,3 +187,22 @@ save_smallest_estimate_counts <- function(counts_df, file_name = "smallest_estim
   utils::write.csv(counts_df, file = output_path, row.names = FALSE)
   logger::log_info(paste("Smallest-estimate counts saved to", output_path))
 }
+
+#' Save the weight-concentration table (Table S1) to CSV
+#'
+#' @param table_df [data.frame] Table from calculate_weight_shares()
+#' @param file_name [character] Output file name (default: "weight_concentration.csv")
+#' @param output_dir [character] Output directory (default: "data")
+#' @export
+save_weight_shares <- function(table_df, file_name = "weight_concentration.csv", output_dir = "data") {
+  # Create the output folder
+  if (!dir.exists(output_dir)) {
+    dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+  }
+
+  # Save the results
+  output_path <- file.path(output_dir, file_name)
+  logger::log_debug("Saving weight-concentration table to ", output_path)
+  utils::write.csv(table_df, file = output_path, row.names = FALSE)
+  logger::log_info(paste("Weight-concentration table (Table S1) saved to", output_path))
+}

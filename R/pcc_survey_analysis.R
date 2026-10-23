@@ -43,12 +43,15 @@ get_pcc_survey_metaflavours <- function(df, re_method = "ML", re_method_fishers_
   }
 
   # Weight concentration (RSM revision, R2 point 3): share of each estimator's
-  # total weight carried by its most heavily weighted estimate(s). Estimate
-  # level ("<method>_w_top1_estimate" / "_w_top3_estimate") feeds the W_top1 / W_top3 rows
-  # of the estimator summary (Table S1); the paper level ("_study", weights
-  # summed over a primary study's estimates) is kept alongside in case the
-  # reviewer meant papers. See R/weight_concentration.R for the decisions.
-  # PET-PEESE has no weight share by design.
+  # total weight carried by its highest-weight primary study and its three
+  # highest-weight primary studies, a study's weight being the sum of its
+  # estimates' weights ("<method>_w_top1_study" / "_w_top3_study"; these feed
+  # the W_top1 / W_top3 rows of the estimator summary, i.e. Appendix Table 1,
+  # and the supplement's Table S1). The estimate-level shares
+  # ("_w_top1_estimate" / "_w_top3_estimate") are kept for reference. See
+  # R/weight_concentration.R for the decisions. PET-PEESE has no weight share
+  # by design.
+  results$n_studies <- length(unique(df$study))
   for (method in names(methods)) {
     wc <- weight_concentration(methods[[method]]$weights, df$study)
     results[[paste0(method, "_w_top1_estimate")]] <- wc$top1_est
@@ -213,17 +216,19 @@ estimator_display_names <- function() {
 #' `MSE_PP` is the mean squared difference of each estimator from PET-PEESE
 #' (requires a `petpeese` column; NA otherwise and for PP itself), and `Flipped`
 #' is the mean estimate over the sign-flipped meta-analyses (requires a `flipped`
-#' flag; NA otherwise). Two further rows make up the supplementary Table S1
+#' flag; NA otherwise). Two further rows complete the paper's Appendix Table 1
 #' (Reviewer 2's weight-concentration diagnostic): `W_top1` and `W_top3` are the
-#' median, across meta-analyses, of the share of the estimator's total weight
-#' carried by its most heavily weighted estimate and by its three most heavily
-#' weighted estimates (requires `<method>_w_top1_estimate` / `<method>_w_top3_estimate`
-#' columns from [get_pcc_survey_metaflavours()]; NA otherwise and for PP, which
-#' has no weight share by design; see R/weight_concentration.R).
+#' mean, across meta-analyses, of the share of the estimator's total weight
+#' carried by its highest-weight primary study and by its three highest-weight
+#' primary studies, a study's weight being the sum of its estimates' weights
+#' (requires `<method>_w_top1_study` / `<method>_w_top3_study` columns from
+#' [get_pcc_survey_metaflavours()]; NA otherwise and for PP, which has no weight
+#' share by design; see R/weight_concentration.R and
+#' [calculate_weight_shares()] for the supplement's Table S1).
 #'
 #' @param results_df [data.frame] Results from pcc_survey_analyse() containing
 #'   estimator columns, plus optionally `petpeese`, `flipped` and the
-#'   `<method>_w_top1_estimate` / `<method>_w_top3_estimate` columns for the `MSE_PP`,
+#'   `<method>_w_top1_study` / `<method>_w_top3_study` columns for the `MSE_PP`,
 #'   `Flipped`, `W_top1` and `W_top3` rows.
 #' @return [data.frame] Summary table with statistics as rows and estimators as columns
 #' @export
@@ -290,21 +295,21 @@ calculate_estimator_summary <- function(results_df) {
       flipped_mean <- if (length(flipped_vals) == 0) NA_real_ else mean(flipped_vals)
     }
 
-    # Weight-concentration rows ("W_top1" / "W_top3" of Table S1): median across
-    # meta-analyses of the share of total weight carried by the top 1 / top 3
-    # estimates (the median, not the mean, because a few extreme MAs distort the
-    # mean). The per-MA shares live in "<method>_w_top1_estimate" /
-    # "<method>_w_top3_estimate", with <method> the estimator column minus "_est". NA
-    # when those columns are absent and for PET-PEESE ("petpeese"), which has no
-    # weight share (see R/weight_concentration.R).
-    median_share <- function(suffix) {
+    # Weight-concentration rows ("W_top1" / "W_top3" of Appendix Table 1): mean
+    # across meta-analyses of the share of total weight carried by the top 1 /
+    # top 3 primary studies. The per-MA shares live in "<method>_w_top1_study" /
+    # "<method>_w_top3_study", with <method> the estimator column minus "_est".
+    # NA when those columns are absent and for PET-PEESE ("petpeese"), which has
+    # no weight share (see R/weight_concentration.R). Medians and IQRs are in
+    # calculate_weight_shares() (the supplement's Table S1).
+    mean_share <- function(suffix) {
       if (col == "petpeese") return(NA_real_)
       share_col <- paste0(sub("_est$", "", col), suffix)
       shares <- individual_metas[[share_col]]
-      if (is.null(shares) || all(is.na(shares))) NA_real_ else stats::median(shares, na.rm = TRUE)
+      if (is.null(shares) || all(is.na(shares))) NA_real_ else mean(shares, na.rm = TRUE)
     }
-    w_top1 <- median_share("_w_top1_estimate")
-    w_top3 <- median_share("_w_top3_estimate")
+    w_top1 <- mean_share("_w_top1_study")
+    w_top3 <- mean_share("_w_top3_study")
 
     # Common values for all cases
     count_val <- as.integer(n_total)

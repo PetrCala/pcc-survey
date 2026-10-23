@@ -52,6 +52,16 @@ run_pcc_survey_analysis <- function(config_path = NULL) {
     output_dir = config$output$output_dir
   )
 
+  # Calculate and save the weight-concentration table (supplement Table S1):
+  # primary-study-level top-1 / top-3 weight shares with mean, median and IQR
+  # across meta-analyses, plus the equal-study-weights benchmark
+  weight_table <- calculate_weight_shares(results)
+  save_weight_shares(
+    table_df = weight_table,
+    file_name = config$output$weight_concentration_file_name %||% "weight_concentration.csv",
+    output_dir = config$output$output_dir
+  )
+
   # Save the combined study-level dataset (item 3) for the aggregate FAT-PET panel
   combined_dataset <- attr(results, "combined_dataset")
   if (!is.null(combined_dataset)) {

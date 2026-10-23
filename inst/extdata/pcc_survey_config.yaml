@@ -62,3 +62,4 @@ output:
   estimator_summary_file_name: "estimator_summary.csv"  # Estimator summary statistics (Table 1) relative to project root
   combined_dataset_file_name: "pcc_combined_dataset.csv"  # Combined study-level dataset for the aggregate FAT-PET panel
   smallest_counts_file_name: "smallest_estimate_counts.csv"  # Per-estimator smallest ("most conservative") and negative counts
+  weight_concentration_file_name: "weight_concentration.csv"  # Table S1: study-level top-1 / top-3 weight shares (mean, median, IQR) and the equal-study benchmark
