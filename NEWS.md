@@ -17,6 +17,8 @@
   weight is the sum of its estimates' weights. This replaces the estimate-level
   medians of the previous round; the estimate-level columns stay in the per-MA
   results for reference.
+- The `MSE_PP` row of the estimator summary is renamed `MSD_PP` (mean squared
+  difference from PET-PEESE), matching the relabelled Table 1 row.
 
 ### Added (RSM revision, round 2: co-author edits of October 2026)
 - `calculate_weight_shares()` and `save_weight_shares()`

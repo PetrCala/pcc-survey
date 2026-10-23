@@ -33,7 +33,7 @@
 # * PET-PEESE gets no share: its WLS weights (1 / se^2) equal UWLS1's, but its
 #   intercept is not a weighted mean of the effects, so a "share of weight" is
 #   not defined. It is left out of Table S1 and blank in Appendix Table 1, as
-#   MSE-PP is for PP.
+#   MSD-PP is for PP.
 
 #' Share of total weight carried by the most heavily weighted units
 #'
