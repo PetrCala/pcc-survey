@@ -122,6 +122,66 @@ test_that("REz and UWLSz weight shares ignore estimates with df <= 1", {
   expect_equal(res$hsma_w_top1_study, 2500 / 3008)
 })
 
+test_that("calculate_weight_shares summarises study-level shares and the benchmark", {
+  results_df <- data.frame(
+    meta = c("M1", "M2", "M3", "M4", "All meta-analyses"),
+    re1_est = c(0.1, 0.2, 0.3, 0.4, 0.25),
+    hsma_est = c(0.1, 0.2, 0.3, 0.4, 0.25),
+    petpeese = c(0.0, 0.1, 0.2, 0.3, 0.15),
+    re1_w_top1_study = c(0.10, 0.20, 0.30, 0.40, 0.99),
+    re1_w_top3_study = c(0.30, 0.50, 0.70, 0.90, 0.99),
+    # Estimate-level shares must not be used
+    re1_w_top1_estimate = c(0.01, 0.01, 0.01, 0.01, 0.01),
+    re1_w_top3_estimate = c(0.02, 0.02, 0.02, 0.02, 0.02),
+    hsma_w_top1_study = c(0.50, NA, 0.70, 0.90, 0.99),
+    hsma_w_top3_study = c(0.80, NA, 1.00, 1.00, 0.99),
+    n_studies = c(2, 4, 10, 20, 36)
+  )
+
+  tab <- calculate_weight_shares(results_df)
+
+  expect_equal(tab$estimator, c("RE1", "HS", "Equal study weights"))
+  expect_equal(colnames(tab), c(
+    "estimator", "top1_mean", "top1_median", "top1_q25", "top1_q75",
+    "top3_mean", "top3_median", "top3_q25", "top3_q75"
+  ))
+
+  re1 <- tab[tab$estimator == "RE1", ]
+  top1 <- c(0.10, 0.20, 0.30, 0.40)
+  expect_equal(re1$top1_mean, mean(top1))
+  expect_equal(re1$top1_median, median(top1))
+  expect_equal(re1$top1_q25, unname(quantile(top1, 0.25)))
+  expect_equal(re1$top1_q75, unname(quantile(top1, 0.75)))
+  expect_equal(re1$top3_mean, mean(c(0.30, 0.50, 0.70, 0.90)))
+
+  # NA shares are skipped
+  expect_equal(tab[tab$estimator == "HS", ]$top1_mean, mean(c(0.50, 0.70, 0.90)))
+
+  # Benchmark: 1 / k and min(3, k) / k
+  bench <- tab[tab$estimator == "Equal study weights", ]
+  k <- c(2, 4, 10, 20)
+  expect_equal(bench$top1_mean, mean(1 / k))
+  expect_equal(bench$top3_mean, mean(pmin(3, k) / k))
+  expect_equal(bench$top3_median, median(pmin(3, k) / k))
+
+  # The means match the W_top rows of the estimator summary (Appendix Table 1)
+  summ <- calculate_estimator_summary(results_df)
+  expect_equal(summ[summ$Statistic == "W_top1", ]$RE1, re1$top1_mean)
+  expect_equal(summ[summ$Statistic == "W_top3", ]$RE1, re1$top3_mean)
+})
+
+test_that("calculate_weight_shares drops the benchmark without n_studies", {
+  results_df <- data.frame(
+    meta = c("M1", "M2"),
+    re1_est = c(0.1, 0.2),
+    re1_w_top1_study = c(0.2, 0.4),
+    re1_w_top3_study = c(0.6, 0.8)
+  )
+  tab <- calculate_weight_shares(results_df)
+  expect_equal(tab$estimator, "RE1")
+  expect_error(calculate_weight_shares(data.frame(meta = "M1", re1_est = 0.1)))
+})
+
 test_that("get_pcc_survey_metaflavours reports estimate- and paper-level top-1/top-3 weight shares", {
   df <- data.frame(
     meta = "m",
@@ -135,6 +195,9 @@ test_that("get_pcc_survey_metaflavours reports estimate- and paper-level top-1/t
   df <- compute_derived_quantities(df)
 
   res <- get_pcc_survey_metaflavours(df)
+
+  # Number of distinct primary studies, for the equal-study benchmark
+  expect_equal(res$n_studies, 3L)
 
   # Simple mean, estimate level: 1/k and 3/k; paper level: s1 carries 2 of 4
   expect_equal(res$simple_mean_w_top1_estimate, 0.25)

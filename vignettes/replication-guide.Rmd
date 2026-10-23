@@ -169,10 +169,13 @@ The main results file (`pcc_survey_results.csv`) should contain:
 - PET-PEESE benchmark and FAT: `petpeese`, `petpeese_se`, `petpeese_type`,
   `fat`, `fat_se`
 - Sign-alignment flag: `flipped`
-- Weight concentration (Table S1): `<method>_w_top1_estimate`, `<method>_w_top3_estimate`,
-  the share of the estimator's total weight carried by its most heavily weighted
-  estimate(s); `<method>_w_top1_study`, `<method>_w_top3_study`, the same with
-  weights summed over a primary study's estimates
+- Weight concentration (Appendix Table 1 and supplement Table S1):
+  `<method>_w_top1_study`, `<method>_w_top3_study`, the share of the estimator's
+  total weight carried by its highest-weight primary study and its three
+  highest-weight primary studies (a study's weight is the sum of its estimates'
+  weights); `n_studies`, the number of primary studies; and, for reference only,
+  `<method>_w_top1_estimate`, `<method>_w_top3_estimate`, the same at the
+  estimate level
 - Sample-size descriptives: `k_`, `avg_n`, `median_n`
 
 ## Step 6: Session Information
@@ -267,7 +270,8 @@ filtering:
 - [ ] Analysis completed without errors
 - [ ] Output files generated:
   - [ ] `output/pcc_survey_results.csv`
-  - [ ] `output/estimator_summary.csv` (Table 1 plus the Table S1 rows `W_top1` / `W_top3`)
+  - [ ] `output/estimator_summary.csv` (Table 1 plus the Appendix Table 1 rows `W_top1` / `W_top3`)
+  - [ ] `output/weight_concentration.csv` (supplement Table S1)
   - [ ] `output/smallest_estimate_counts.csv`
   - [ ] `output/pcc_combined_dataset.csv`
   - [ ] `output/psb_results.csv` (ESS / publication-selection bias)

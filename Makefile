@@ -98,13 +98,13 @@ zip:
 	@cd "$(PROJECT_DIR)" && \
 	ZIP_NAME="pcc-survey-results-$$(date +%y-%m-%d).zip" && \
 	rm -f "$$ZIP_NAME" && \
-	(for f in output/pcc_survey_results.csv output/estimator_summary.csv output/smallest_estimate_counts.csv output/pcc_combined_dataset.csv output/psb_results.csv output/session_info.txt; do \
+	(for f in output/pcc_survey_results.csv output/estimator_summary.csv output/smallest_estimate_counts.csv output/weight_concentration.csv output/pcc_combined_dataset.csv output/psb_results.csv output/session_info.txt; do \
 	  if [ ! -f "$$f" ]; then echo "Warning: $$f is missing"; fi; \
 	done) && \
 	LATEST_LOG=$$(ls -t logs/*.log 2>/dev/null | head -1) && \
 	if [ -z "$$LATEST_LOG" ]; then echo "Warning: no log file found in logs/"; fi && \
 	ZIP_FILES="" && \
-	for f in output/pcc_survey_results.csv output/estimator_summary.csv output/smallest_estimate_counts.csv output/pcc_combined_dataset.csv output/psb_results.csv output/session_info.txt; do \
+	for f in output/pcc_survey_results.csv output/estimator_summary.csv output/smallest_estimate_counts.csv output/weight_concentration.csv output/pcc_combined_dataset.csv output/psb_results.csv output/session_info.txt; do \
 	  [ -f "$$f" ] && ZIP_FILES="$$ZIP_FILES $$f"; \
 	done && \
 	[ -n "$$LATEST_LOG" ] && ZIP_FILES="$$ZIP_FILES $$LATEST_LOG"; \
