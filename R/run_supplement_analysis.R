@@ -48,7 +48,8 @@ supplement_table_files <- function() {
 #' writes one CSV per supplement table to `output_dir`: Tables S2 to S10 and
 #' the Section 6 paired t-tests and correlations (Table S1 is
 #' `output/weight_concentration.csv`, written by [run_pcc_survey_analysis()]).
-#' Numbers are rounded to 3 decimals. All random steps use fixed seeds derived
+#' Numbers are rounded to 3 decimals (6 for the Table S8 regressions, whose
+#' slopes are often below 0.001). All random steps use fixed seeds derived
 #' from `seed`, so a rerun gives the same files. The full run (2,000 simulation
 #' replications, 10,000 bootstrap resamples, 200 random draws) is slow; the
 #' simulation dominates.
@@ -128,7 +129,10 @@ run_supplement_analysis <- function(config_path = NULL, output_dir = NULL,
     t0 <- Sys.time()
     logger::log_info(paste("Supplement: computing", id))
     out[[id]] <- builders[[id]]()
-    save_supplement_table(out[[id]], files[[id]], output_dir = output_dir)
+    # Several Table S8 slopes are below 0.001 (the indicators are on t-statistic
+    # scales), so its coefficients keep 6 decimals.
+    save_supplement_table(out[[id]], files[[id]], output_dir = output_dir,
+                          digits = if (id == "S8") 6L else 3L)
     logger::log_info(paste("Supplement:", id, "done in",
                            format(round(difftime(Sys.time(), t0, units = "mins"), 2))))
   }
