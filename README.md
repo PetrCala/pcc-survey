@@ -98,6 +98,25 @@ This runs setup, data checks, and the analysis in sequence. Run `make help` to s
 | `output/session_info.txt` | R session info for reproducibility |
 | `logs/pcc_survey_analysis_YYYYMMDD_HHMMSS.log` | Timestamped execution log |
 
+### Online supplement (`make supplement`)
+
+`run_supplement_analysis()` (or `make supplement`) writes one CSV per online-supplement table to `output/supplement/`, rounded to 3 decimals (6 for Table S8, whose slopes are often below 0.001). It prepares the data exactly as the main analysis does (172 meta-analyses, 63,730 PCCs) and uses the same conventions; "mean" always means the mean across meta-analyses, each counting equally. Random steps use fixed seeds. The full run is slow (the Table S9 simulation dominates); `make supplement SUPPLEMENT_CORES=4` runs the simulation in 4 worker processes without changing the results, and `SUPPLEMENT_REPS` sets its number of replications.
+
+| File | Description |
+| --- | --- |
+| `table_s2_drop_top_studies.csv` | Table S2: each estimator re-estimated after dropping its highest-weight primary study (top 1) and three highest-weight studies (top 3) |
+| `table_s3_one_estimate_per_study.csv` | Table S3: one estimate per study (study medians; 200 random draws), weights divided by the study's number of estimates m, and three-level REML for RE1 and REz |
+| `table_s4_bootstrap_contrasts.csv` | Table S4: percentile bootstrap (10,000 resamples of meta-analyses) of five paired estimator contrasts |
+| `table_s5_subsamples.csv` | Table S5: estimator means and medians in subsamples (at least 10, 20 or 50 studies; at least 30 estimates; flipped / not flipped) |
+| `table_s6_tau2_hs_variants.csv` | Table S6: RE1, RE2 and REz with REML and DerSimonian-Laird tau2; HS with df weights |
+| `table_s7_fishers_z_variance.csv` | Table S7: REz and UWLSz with Fisher's z variance 1 / (df - 1) versus 1 / (n - 3) |
+| `table_s8_gap_regressions.csv` | Table S8: estimator gaps regressed on ESS, PSST and the Egger t, with controls and HC3 standard errors |
+| `table_s9_simulation.csv` | Table S9: calibrated simulation (172 meta-analyses x 2,000 replications x 3 selection conditions), bias and RMSE per estimator |
+| `table_s10_leave_one_out.csv` | Table S10: leave-one-meta-analysis-out ranges of the headline statistics |
+| `section6_tests.csv` | Section 6: paired t-tests (REz - RE1, UWLS1 - UWLSz, UWLSz - HS) and the HS / UWLSz and HS / REz correlations |
+
+The definitions behind each table (which contrasts, controls, selection conditions and calibration) are documented in `R/supplement_tables.R` and `R/supplement_simulation.R`.
+
 ## Usage Reference
 
 ### R functions
@@ -112,6 +131,9 @@ results <- run_pcc_survey_analysis()
 # Run PSB analysis
 psb_results <- run_psb_analysis()
 
+# Run the online-supplement tables (slow; writes output/supplement/)
+supplement <- run_supplement_analysis()
+
 # Check data availability
 check_data_availability()
 ```
@@ -124,6 +146,7 @@ make setup      # Restore runtime dependencies via renv (+ pkgload loader)
 make replicate  # Full workflow: setup + data check + analysis
 make run        # Run PCC Survey analysis only
 make run-psb    # Run PSB analysis only
+make supplement # Online-supplement tables S2-S10 and Section 6 tests (slow)
 make zip        # Bundle output CSVs, session_info, and latest log into a zip
 make clean      # Remove generated output files
 make doctor     # Print R and package version info
@@ -176,7 +199,7 @@ If you need to substitute a different dataset, place it at `data/pcc_survey_data
 
 Everything needed to reproduce the paper's empirical results lives in this repository, in two parts:
 
-- **Main analysis (this R package).** `data/pcc_survey_data.xlsx` together with the code in `R/` reproduces the per-meta-analysis results and Table 1 across the 172 PCC meta-analyses. Run it as in [Quick Start](#quick-start); results are written to `output/` (see [Outputs](#outputs)). `output/estimator_summary.csv` and `output/smallest_estimate_counts.csv` together contain every row of the manuscript's Table 1 (Mean, Median, Std Dev, Smallest, MSD-PP, and Flipped) plus the two Appendix Table 1 rows `W_top1` and `W_top3`: the mean, across the 172 meta-analyses, of the share of each estimator's total weight carried by its highest-weight primary study and by its three highest-weight primary studies, where a study's weight is the sum of the weights of its estimates. `output/weight_concentration.csv` is the online supplement's Table S1: the same shares with their median and interquartile range, plus the benchmark the shares would take if every study counted equally (see `R/weight_concentration.R` for the conventions). The per-meta-analysis shares are the `<method>_w_top1_study` / `<method>_w_top3_study` columns of `output/pcc_survey_results.csv`, and `n_studies` gives the number of primary studies; the estimate-level counterparts (`_estimate` columns) are kept for reference. Fisher's z uses the partial-correlation variance 1 / (df - 1), so REz and UWLSz leave out the few estimates with df <= 1; the run log reports how many.
+- **Main analysis (this R package).** `data/pcc_survey_data.xlsx` together with the code in `R/` reproduces the per-meta-analysis results and Table 1 across the 172 PCC meta-analyses. Run it as in [Quick Start](#quick-start); results are written to `output/` (see [Outputs](#outputs)). `output/estimator_summary.csv` and `output/smallest_estimate_counts.csv` together contain every row of the manuscript's Table 1 (Mean, Median, Std Dev, Smallest, MSD-PP, and Flipped) plus the two Appendix Table 1 rows `W_top1` and `W_top3`: the mean, across the 172 meta-analyses, of the share of each estimator's total weight carried by its highest-weight primary study and by its three highest-weight primary studies, where a study's weight is the sum of the weights of its estimates. `output/weight_concentration.csv` is the online supplement's Table S1: the same shares with their median and interquartile range, plus the benchmark the shares would take if every study counted equally (see `R/weight_concentration.R` for the conventions). The per-meta-analysis shares are the `<method>_w_top1_study` / `<method>_w_top3_study` columns of `output/pcc_survey_results.csv`, and `n_studies` gives the number of primary studies; the estimate-level counterparts (`_estimate` columns) are kept for reference. Fisher's z uses the partial-correlation variance 1 / (df - 1), so REz and UWLSz leave out the few estimates with df <= 1; the run log reports how many. The remaining online-supplement tables (S2 to S10) and the Section 6 paired t-tests and correlations come from `run_supplement_analysis()` (`make supplement`), which writes them to `output/supplement/` (see [Online supplement](#online-supplement-make-supplement)).
 - **Secondary statistics (`secondary-stats/`).** Companion analyses provided by co-author Tom Stanley and calculated outside the R pipeline (Stata / Statview / spreadsheets): the survey descriptive statistics, the PSST and aggregate Egger/FAT-PET publication-selection tests, the ICT illustration, and the combined study-level dataset (`PCCcombined.dta`). See [`secondary-stats/README.md`](secondary-stats/README.md) for a file-by-file guide. These are reference and provenance artifacts; they are **not** inputs to the R analysis above.
 
 ## Reproducibility

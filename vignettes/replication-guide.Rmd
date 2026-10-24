@@ -246,6 +246,22 @@ psb_results <- run_psb_analysis()
 # Results saved to output/psb_results.csv (ESS and related PSB measures)
 ```
 
+### Running the Online-Supplement Tables
+
+```r
+# Tables S2 to S10 and the Section 6 paired t-tests and correlations, one CSV
+# per table in output/supplement/ (slow: the Table S9 simulation dominates)
+supplement <- run_supplement_analysis()
+
+# Run the simulation in 4 worker processes (same results), or run a quick
+# check with fewer simulation replications
+supplement <- run_supplement_analysis(cores = 4)
+quick <- run_supplement_analysis(replications = 50, output_dir = "output/supplement-quick")
+```
+
+From a terminal, `make supplement` (options `SUPPLEMENT_CORES`, `SUPPLEMENT_REPS`)
+does the same.
+
 ### Custom Data Directory
 
 ```r
@@ -276,6 +292,7 @@ filtering:
   - [ ] `output/pcc_combined_dataset.csv`
   - [ ] `output/psb_results.csv` (ESS / publication-selection bias)
   - [ ] `output/session_info.txt`
+  - [ ] `output/supplement/` (Tables S2 to S10 and `section6_tests.csv`, from `run_supplement_analysis()`)
 - [ ] Log file created in `logs/`
 - [ ] Results match expected structure
 

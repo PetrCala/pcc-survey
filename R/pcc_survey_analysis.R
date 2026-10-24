@@ -90,15 +90,20 @@ get_pcc_survey_metaflavours <- function(df, re_method = "ML", re_method_fishers_
   as.data.frame(results)
 }
 
-#' Run the PCC Survey analysis
+#' Read and prepare the estimate-level PCC data
+#'
+#' Reads the survey data, cleans it, keeps the PCC estimates that pass
+#' [validate_pcc_observations()], aligns signs ([convert_inverse_relationships()],
+#' if enabled) and adds the derived columns ([compute_derived_quantities()]).
+#' This is the estimate-level sample behind Table 1 (63,730 PCCs in 172
+#' meta-analyses).
 #'
 #' @param config [list] Configuration list loaded from pcc_survey_config.yaml
 #' @param data_dir [character] Directory containing the data file (default: "data")
-#' @return [data.frame] The analysis results
+#' @return [data.frame] One row per estimate, with attribute `flipped_metas`
+#'   naming the sign-flipped meta-analyses.
 #' @export
-pcc_survey_analyse <- function(config, data_dir = "data") {
-  logger::log_info("Running the PCC Survey analysis")
-
+prepare_pcc_data <- function(config, data_dir = "data") {
   # Read the data (with caching if enabled)
   df <- maybe_cached(
     config,
@@ -148,6 +153,25 @@ pcc_survey_analyse <- function(config, data_dir = "data") {
 
   # Compute all derived quantities (S1/S2 SE, Fisher's Z, PCC3, etc.)
   pcc_df <- compute_derived_quantities(pcc_df)
+  attr(pcc_df, "flipped_metas") <- flipped_metas
+
+  pcc_df
+}
+
+#' Run the PCC Survey analysis
+#'
+#' @param config [list] Configuration list loaded from pcc_survey_config.yaml
+#' @param data_dir [character] Directory containing the data file (default: "data")
+#' @param pcc_df [data.frame|NULL] Prepared estimate-level data from
+#'   [prepare_pcc_data()]; read and prepared here when NULL.
+#' @return [data.frame] The analysis results
+#' @export
+pcc_survey_analyse <- function(config, data_dir = "data", pcc_df = NULL) {
+  logger::log_info("Running the PCC Survey analysis")
+
+  if (is.null(pcc_df)) pcc_df <- prepare_pcc_data(config, data_dir = data_dir)
+  flipped_metas <- attr(pcc_df, "flipped_metas")
+  if (is.null(flipped_metas)) flipped_metas <- character(0)
 
   # Build the combined study-level dataset for the aggregate FAT-PET panel (item 3)
   combined_dataset <- build_combined_dataset(pcc_df)

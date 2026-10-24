@@ -1,12 +1,16 @@
 .DEFAULT_GOAL := help
 
-.PHONY: help setup setup-dev snapshot document build check lint run run-psb validate clean doctor test replicate zip
+.PHONY: help setup setup-dev snapshot document build check lint run run-psb supplement validate clean doctor test replicate zip
 
 # Absolute path to this repo's root (directory containing this Makefile).
 # This avoids hard-coding the project directory name and works even if `make`
 # is invoked from a different working directory.
 PROJECT_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 RSCRIPT ?= Rscript
+# Online-supplement run: simulation replications (Table S9) and worker
+# processes for the simulation (the results do not depend on it).
+SUPPLEMENT_REPS ?= 2000
+SUPPLEMENT_CORES ?= 1
 
 help:
 	@echo ""
@@ -24,11 +28,13 @@ help:
 	@echo "  lint      Run lintr on the package (fails on lint)"
 	@echo "  run       Run the PCC Survey analysis (writes $(PROJECT_DIR)/output/pcc_survey_results.csv)"
 	@echo "  run-psb   Run the PSB analysis (writes $(PROJECT_DIR)/output/psb_results.csv)"
+	@echo "  supplement Run the online-supplement tables S2-S10 and Section 6 tests (writes $(PROJECT_DIR)/output/supplement/; slow)"
+	@echo "            Options: SUPPLEMENT_REPS=2000 (Table S9 replications), SUPPLEMENT_CORES=1 (simulation processes)"
 	@echo "  validate  Alias for run"
 	@echo "  test      Run testthat tests"
 	@echo "  clean     Remove generated outputs"
 	@echo "  doctor    Print environment info"
-	@echo "  zip       Create pcc-survey-results-YY-MM-DD.zip with output CSVs, session_info.txt, and latest log"
+	@echo "  zip       Create pcc-survey-results-YY-MM-DD.zip with output CSVs (incl. output/supplement/), session_info.txt, and latest log"
 	@echo ""
 
 setup:
@@ -61,13 +67,16 @@ run:
 run-psb:
 	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('pkgload', quietly=TRUE)) stop('pkgload not installed; run make setup'); pkgload::load_all('.'); run_psb_analysis()"
 
+supplement:
+	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('pkgload', quietly=TRUE)) stop('pkgload not installed; run make setup'); pkgload::load_all('.'); run_supplement_analysis(replications = $(SUPPLEMENT_REPS), cores = $(SUPPLEMENT_CORES))"
+
 validate: run
 
 test:
 	@cd "$(PROJECT_DIR)" && $(RSCRIPT) -e "if (!requireNamespace('devtools', quietly=TRUE)) stop('devtools not installed; run make setup-dev'); devtools::test()"
 
 clean:
-	@$(RSCRIPT) -e "outs <- file.path('$(PROJECT_DIR)','output', c('pcc_survey_results.csv','estimator_summary.csv','smallest_estimate_counts.csv','pcc_combined_dataset.csv','psb_results.csv','session_info.txt')); existing <- outs[file.exists(outs)]; if (length(existing)) { file.remove(existing); cat('Removed:', existing, sep='\n'); cat('\n') } else { cat('No generated output to remove\n') }"
+	@$(RSCRIPT) -e "outs <- file.path('$(PROJECT_DIR)','output', c('pcc_survey_results.csv','estimator_summary.csv','smallest_estimate_counts.csv','pcc_combined_dataset.csv','psb_results.csv','session_info.txt')); outs <- c(outs, list.files(file.path('$(PROJECT_DIR)','output','supplement'), pattern = '[.]csv$$', full.names = TRUE)); existing <- outs[file.exists(outs)]; if (length(existing)) { file.remove(existing); cat('Removed:', existing, sep='\n'); cat('\n') } else { cat('No generated output to remove\n') }"
 
 doctor:
 	@$(RSCRIPT) -e "cat('R version:', R.version.string, '\n')"
@@ -106,7 +115,10 @@ zip:
 	ZIP_FILES="" && \
 	for f in output/pcc_survey_results.csv output/estimator_summary.csv output/smallest_estimate_counts.csv output/weight_concentration.csv output/pcc_combined_dataset.csv output/psb_results.csv output/session_info.txt; do \
 	  [ -f "$$f" ] && ZIP_FILES="$$ZIP_FILES $$f"; \
-	done && \
+	done; \
+	for f in output/supplement/*.csv; do \
+	  [ -f "$$f" ] && ZIP_FILES="$$ZIP_FILES $$f"; \
+	done; \
 	[ -n "$$LATEST_LOG" ] && ZIP_FILES="$$ZIP_FILES $$LATEST_LOG"; \
 	if [ -n "$$ZIP_FILES" ]; then zip "$$ZIP_NAME" $$ZIP_FILES && echo "Created $$ZIP_NAME"; else echo "No files to zip (all expected files missing)."; fi
 
