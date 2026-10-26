@@ -6,22 +6,32 @@
 - `run_supplement_analysis()` and `make supplement` produce the online
   supplement's Tables S2 to S10 and the Section 6 paired t-tests and
   correlations, one CSV per table in `output/supplement/` (3 decimals, fixed
-  seeds): dropping the top-1 / top-3 highest-weight studies
-  (`calculate_drop_top_studies()`, S2); study medians, random one-per-study
-  draws, weights divided by m and three-level REML
-  (`calculate_study_dependence()`, S3); a percentile bootstrap of paired
-  contrasts (`calculate_bootstrap_contrasts()`, S4); subsamples
+  seeds), following the definitions of the supplement draft:
+  dropping the top-1 / top-3 highest-weight studies, PET-PEESE included with
+  its WLS weights (`calculate_drop_top_studies()`, S2); the study's median
+  estimate, one random estimate per study, weights divided by m with tau2
+  re-estimated on the down-weighted data, and three-level REML
+  (`calculate_study_dependence()`, S3); bootstrap intervals and paired t-tests
+  for RE1 - UWLS1, UWLS1 - HS, REz - RE1, UWLSz - HS and UWLS+3 - HS
+  (`calculate_bootstrap_contrasts()`, S4); subsamples
   (`calculate_subsample_means()`, S5); REML / DL tau2 and df-weighted HS
   (`calculate_tau2_hs_variants()`, S6); Fisher's z under 1 / (df - 1) versus
-  1 / (n - 3) (`calculate_fishers_z_variants()`, S7); regressions of estimator
-  gaps on ESS, PSST and the Egger t with HC3 standard errors
-  (`calculate_gap_regressions()`, S8); a calibrated simulation with a
-  `replications` argument (`run_calibrated_simulation()`, S9); leave-one-MA-out
-  ranges (`calculate_leave_one_out()`, S10); and `calculate_section6_tests()`.
+  1 / (n - 3), with Smallest counts, Flipped means, paired t and correlation
+  with HS (`calculate_fishers_z_variants()`, S7); per-SD regressions of the
+  RE1 - UWLS1, RE1 - HS and Mean - UWLS1 gaps on ESS, PSST, the (absolute)
+  Egger t and RE-based ESS with RE1 heterogeneity and size controls and HC3
+  standard errors (`selection_measures()`, `calculate_gap_regressions()`,
+  S8); the calibrated simulation with a `replications` argument
+  (`run_calibrated_simulation()`, S9); leave-one-MA-out ranges
+  (`calculate_leave_one_out()`, S10); and the paper's Section 6 tests
+  (`calculate_section6_tests()`).
 - `meta_estimates()` runs all Table 1 estimators on one meta-analysis with the
   supplement's variations (tau2 estimator, HS weights, Fisher's z variance), and
   internal column-wise estimators (`estimators_matrix()`) re-estimate many
-  samples at once for the random draws and the simulation.
+  samples at once for the random draws, the m-weighted estimates and the
+  simulation.
+- `re()` and `fishers_z()` accept a metafor `control` list (default unchanged);
+  `meta_estimates()` retries a non-converging RE fit with `stepadj = 0.5`.
 - `prepare_pcc_data()` holds the data preparation that `pcc_survey_analyse()`
   did inline, and `pcc_survey_analyse()` accepts an already prepared `pcc_df`.
   Table 1 and Table S1 are unchanged.

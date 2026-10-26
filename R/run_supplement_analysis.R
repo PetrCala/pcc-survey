@@ -44,15 +44,14 @@ supplement_table_files <- function() {
 #' Run the online-supplement analysis
 #'
 #' Prepares the data exactly as [run_pcc_survey_analysis()] does, recomputes the
-#' per-MA results behind Table 1 and the publication-selection measures, and
+#' per-MA results behind Table 1, and
 #' writes one CSV per supplement table to `output_dir`: Tables S2 to S10 and
 #' the Section 6 paired t-tests and correlations (Table S1 is
 #' `output/weight_concentration.csv`, written by [run_pcc_survey_analysis()]).
-#' Numbers are rounded to 3 decimals (6 for the Table S8 regressions, whose
-#' slopes are often below 0.001). All random steps use fixed seeds derived
-#' from `seed`, so a rerun gives the same files. The full run (2,000 simulation
-#' replications, 10,000 bootstrap resamples, 200 random draws) is slow; the
-#' simulation dominates.
+#' Numbers are rounded to 3 decimals, as in the supplement. All random steps
+#' use fixed seeds derived from `seed`, so a rerun gives the same files. The
+#' full run (2,000 simulation replications, 10,000 bootstrap resamples, 200
+#' random draws) is slow; the simulation dominates.
 #'
 #' @param config_path [character|NULL] Path to the config YAML file. Defaults to
 #'   `inst/extdata/pcc_survey_config.yaml`.
@@ -98,11 +97,6 @@ run_supplement_analysis <- function(config_path = NULL, output_dir = NULL,
   results <- pcc_survey_analyse(config, data_dir = data_dir, pcc_df = pcc_df)
   re_method <- config$methods$re_method %||% "ML"
 
-  psb_results <- NULL
-  if ("S8" %in% tables) {
-    psb_results <- do.call(rbind, lapply(split(pcc_df, pcc_df$meta), get_psb_metaflavours,
-                                         re_method = re_method))
-  }
 
   builders <- list(
     S2 = function() calculate_drop_top_studies(pcc_df, re_method = re_method),
@@ -114,7 +108,7 @@ run_supplement_analysis <- function(config_path = NULL, output_dir = NULL,
     S5 = function() calculate_subsample_means(results),
     S6 = function() calculate_tau2_hs_variants(pcc_df, results),
     S7 = function() calculate_fishers_z_variants(pcc_df, results),
-    S8 = function() calculate_gap_regressions(results, psb_results),
+    S8 = function() calculate_gap_regressions(results, pcc_df),
     S9 = function() {
       run_calibrated_simulation(pcc_df, replications = replications, seed = seed + 9000L,
                                 cores = cores)
@@ -129,10 +123,7 @@ run_supplement_analysis <- function(config_path = NULL, output_dir = NULL,
     t0 <- Sys.time()
     logger::log_info(paste("Supplement: computing", id))
     out[[id]] <- builders[[id]]()
-    # Several Table S8 slopes are below 0.001 (the indicators are on t-statistic
-    # scales), so its coefficients keep 6 decimals.
-    save_supplement_table(out[[id]], files[[id]], output_dir = output_dir,
-                          digits = if (id == "S8") 6L else 3L)
+    save_supplement_table(out[[id]], files[[id]], output_dir = output_dir)
     logger::log_info(paste("Supplement:", id, "done in",
                            format(round(difftime(Sys.time(), t0, units = "mins"), 2))))
   }
