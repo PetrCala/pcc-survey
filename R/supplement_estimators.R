@@ -136,8 +136,10 @@ as_column_matrix <- function(x, k, b) {
 #' @param v [matrix|numeric] Sampling variances, same shape as `y` (a vector of
 #'   length `nrow(y)` is recycled across columns).
 #' @param mult [matrix|numeric|NULL] Optional multiplier for each estimate's
-#'   weight in the pooled estimate (Table S3 divides by the study's number of
-#'   estimates). tau2 is estimated without it.
+#'   weight, applied both in the pooled estimate and in the likelihood from
+#'   which tau2 is estimated (each estimate's log-likelihood contribution is
+#'   multiplied by it). Table S3 divides by the study's number of estimates,
+#'   so that tau2 is "re-estimated with the down-weighted data".
 #' @param tol [numeric] Convergence tolerance on the change in tau2.
 #' @param max_iter [integer] Fisher scoring steps before the direct
 #'   maximisation takes over.
@@ -149,30 +151,32 @@ re_matrix <- function(y, v, mult = NULL, tol = 1e-10, max_iter = 100L) {
   b <- ncol(y)
   v <- as_column_matrix(v, k, b)
   keep <- !is.na(y) & !is.na(v)
-  complete <- all(keep)
-  if (!complete) {
+  if (!all(keep)) {
     y[!keep] <- 0
     v[!keep] <- 1
   }
-  ind <- keep * 1
-  n_obs <- colSums(ind)
+  n_obs <- colSums(keep)
+  # Likelihood weight of each estimate: 0 for rows left out, else 1 or `mult`
+  a <- keep * 1
+  if (!is.null(mult)) a <- a * as_column_matrix(mult, k, b)
+  unit <- is.null(mult) && all(keep)
 
-  # For the columns `idx` at tau2 `t2`: the ML log-likelihood (up to a
-  # constant) and the sums behind the Fisher scoring step
-  # (sum w^2 e^2 - sum w) / sum w^2.
+  # For the columns `idx` at tau2 `t2`: the (weighted) ML log-likelihood, up to
+  # a constant, sum a * (-log(v + t2) - e^2 / (v + t2)) / 2, and its Fisher
+  # scoring step (sum a e^2 / (v + t2)^2 - sum a / (v + t2)) / sum a / (v + t2)^2.
   fit_at <- function(idx, t2) {
     cols <- if (length(idx) == b) TRUE else idx
     vt <- v[, cols, drop = FALSE] + rep(t2, each = k)
     w <- 1 / vt
     log_vt <- log(vt)
-    if (!complete) {
-      w <- w * ind[, cols, drop = FALSE]
-      log_vt <- log_vt * ind[, cols, drop = FALSE]
+    if (!unit) {
+      w <- w * a[, cols, drop = FALSE]
+      log_vt <- log_vt * a[, cols, drop = FALSE]
     }
     yy <- y[, cols, drop = FALSE]
     sw <- colSums(w)
     e2 <- (yy - rep(colSums(w * yy) / sw, each = k))^2
-    w2 <- w * w
+    w2 <- w / vt
     list(
       ll = -0.5 * colSums(log_vt) - 0.5 * colSums(w * e2),
       step = (colSums(w2 * e2) - sw) / colSums(w2)
@@ -180,7 +184,7 @@ re_matrix <- function(y, v, mult = NULL, tol = 1e-10, max_iter = 100L) {
   }
 
   # DerSimonian-Laird starting value
-  w <- ind / v
+  w <- a / v
   sw <- colSums(w)
   mu <- colSums(w * y) / sw
   q <- colSums(w * (y - rep(mu, each = k))^2)
@@ -230,17 +234,17 @@ re_matrix <- function(y, v, mult = NULL, tol = 1e-10, max_iter = 100L) {
     kk <- keep[, j]
     yj <- y[kk, j]
     vj <- v[kk, j]
+    aj <- a[kk, j]
     ll_j <- function(t2) {
-      w <- 1 / (vj + t2)
-      -0.5 * sum(log(vj + t2)) - 0.5 * sum(w * (yj - sum(w * yj) / sum(w))^2)
+      w <- aj / (vj + t2)
+      -0.5 * sum(aj * log(vj + t2)) - 0.5 * sum(w * (yj - sum(w * yj) / sum(w))^2)
     }
     opt <- stats::optimize(ll_j, c(0, max(diff(range(yj))^2, 1e-12)), maximum = TRUE, tol = 1e-14)
     candidates <- c(tau2[j], 0, opt$maximum)
     tau2[j] <- candidates[which.max(vapply(candidates, ll_j, numeric(1)))]
   }
 
-  w <- ind / (v + rep(tau2, each = k))
-  if (!is.null(mult)) w <- w * as_column_matrix(mult, k, b)
+  w <- a / (v + rep(tau2, each = k))
   est <- colSums(w * y) / colSums(w)
   est[n_obs == 0] <- NA_real_
   list(est = est, tau2 = tau2)
@@ -333,7 +337,8 @@ pet_peese_matrix <- function(y, se, mult = NULL, alpha = 0.1) {
 #' @param mult [matrix|numeric|NULL] Optional multiplier for each estimate's
 #'   weight in every estimator (1 / m in Table S3, m being the number of
 #'   estimates of the estimate's study; the simple mean then averages the study
-#'   means). RE's tau2 is estimated without it.
+#'   means). For RE and REz it also weights the likelihood from which tau2
+#'   is estimated (see [re_matrix()]).
 #' @return [matrix] One row per sample, one column per estimator, labelled as in
 #'   Table 1 (Mean, RE1, ..., UWLSz, PP).
 #' @keywords internal

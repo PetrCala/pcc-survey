@@ -100,22 +100,22 @@ This runs setup, data checks, and the analysis in sequence. Run `make help` to s
 
 ### Online supplement (`make supplement`)
 
-`run_supplement_analysis()` (or `make supplement`) writes one CSV per online-supplement table to `output/supplement/`, rounded to 3 decimals (6 for Table S8, whose slopes are often below 0.001). It prepares the data exactly as the main analysis does (172 meta-analyses, 63,730 PCCs) and uses the same conventions; "mean" always means the mean across meta-analyses, each counting equally. Random steps use fixed seeds. The full run is slow (the Table S9 simulation dominates); `make supplement SUPPLEMENT_CORES=4` runs the simulation in 4 worker processes without changing the results, and `SUPPLEMENT_REPS` sets its number of replications.
+`run_supplement_analysis()` (or `make supplement`) writes one CSV per online-supplement table to `output/supplement/`, rounded to 3 decimals. It prepares the data exactly as the main analysis does (172 meta-analyses, 63,730 PCCs) and follows the supplement draft's definitions and conventions; "mean" and "median" are taken across meta-analyses, each counting equally. Random steps use fixed seeds. The full run is slow (the Table S9 simulation dominates); `make supplement SUPPLEMENT_CORES=4` runs the simulation in 4 worker processes without changing the results, and `SUPPLEMENT_REPS` sets its number of replications.
 
 | File | Description |
 | --- | --- |
-| `table_s2_drop_top_studies.csv` | Table S2: each estimator re-estimated after dropping its highest-weight primary study (top 1) and three highest-weight studies (top 3) |
-| `table_s3_one_estimate_per_study.csv` | Table S3: one estimate per study (study medians; 200 random draws), weights divided by the study's number of estimates m, and three-level REML for RE1 and REz |
-| `table_s4_bootstrap_contrasts.csv` | Table S4: percentile bootstrap (10,000 resamples of meta-analyses) of five paired estimator contrasts |
-| `table_s5_subsamples.csv` | Table S5: estimator means and medians in subsamples (at least 10, 20 or 50 studies; at least 30 estimates; flipped / not flipped) |
+| `table_s2_drop_top_studies.csv` | Table S2: mean and median of each estimator at baseline and after dropping the one and the three primary studies carrying the most weight under that estimator (for PP, its WLS weights 1 / S1^2) |
+| `table_s3_one_estimate_per_study.csv` | Table S3: mean and median under the study's median estimate, one random estimate per study (200 draws), weights divided by the study's number of estimates m (tau2 re-estimated with the down-weighted data), and three-level REML for RE1 and REz |
+| `table_s4_bootstrap_contrasts.csv` | Table S4: mean differences RE1 - UWLS1, UWLS1 - HS, REz - RE1, UWLSz - HS and UWLS+3 - HS, with 95% percentile bootstrap intervals (10,000 resamples of meta-analyses) and paired t-tests |
+| `table_s5_subsamples.csv` | Table S5: means and medians in subsamples (at least 10, 20 or 50 studies; at least 30 estimates; flipped / not flipped) |
 | `table_s6_tau2_hs_variants.csv` | Table S6: RE1, RE2 and REz with REML and DerSimonian-Laird tau2; HS with df weights |
-| `table_s7_fishers_z_variance.csv` | Table S7: REz and UWLSz with Fisher's z variance 1 / (df - 1) versus 1 / (n - 3) |
-| `table_s8_gap_regressions.csv` | Table S8: estimator gaps regressed on ESS, PSST and the Egger t, with controls and HC3 standard errors |
+| `table_s7_fishers_z_variance.csv` | Table S7: REz and UWLSz under Fisher's z variance 1 / (df - 1) and 1 / (n - 3): mean, median, Smallest count, Flipped mean, paired t (vs RE1 / HS) and correlation with HS |
+| `table_s8_gap_regressions.csv` | Table S8: gaps RE1 - UWLS1, RE1 - HS and Mean - UWLS1 regressed on ESS, PSST, the Egger t, the absolute Egger t and RE-based ESS (per SD, HC3 SEs), and the mean gaps with and without signs of selection |
 | `table_s9_simulation.csv` | Table S9: calibrated simulation (172 meta-analyses x 2,000 replications x 3 selection conditions), bias and RMSE per estimator |
-| `table_s10_leave_one_out.csv` | Table S10: leave-one-meta-analysis-out ranges of the headline statistics |
-| `section6_tests.csv` | Section 6: paired t-tests (REz - RE1, UWLS1 - UWLSz, UWLSz - HS) and the HS / UWLSz and HS / REz correlations |
+| `table_s10_leave_one_out.csv` | Table S10: leave-one-meta-analysis-out ranges of the five Table S4 mean differences |
+| `section6_tests.csv` | Section 6: the paired t-tests quoted in the paper (RE2 - RE1 and seven comparisons among RE1, REz, UWLS1, UWLS+3, UWLSz and HS) and the HS / UWLSz and HS / REz correlations |
 
-The definitions behind each table (which contrasts, controls, selection conditions and calibration) are documented in `R/supplement_tables.R` and `R/supplement_simulation.R`.
+The definitions behind each table, including the details the draft leaves implicit, are documented in `R/supplement_tables.R` and `R/supplement_simulation.R`.
 
 ## Usage Reference
 

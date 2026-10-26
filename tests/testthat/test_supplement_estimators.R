@@ -37,9 +37,18 @@ test_that("re_matrix leaves out NA rows, handles k = 1 and applies weight multip
   # 1 / v * mult
   y0 <- c(0.2, 0.2, 0.2)
   expect_equal(re_matrix(y0, c(0.01, 0.02, 0.04), mult = c(1, 0.5, 0.25))$est, 0.2)
-  fit <- re_matrix(y[1:3], v[1:3])
-  w <- 1 / (v[1:3] + fit$tau2) * c(1, 1, 0.5)
-  expect_equal(re_matrix(y[1:3], v[1:3], mult = c(1, 1, 0.5))$est, sum(w * y[1:3]) / sum(w))
+})
+
+test_that("re_matrix weights the tau2 likelihood and the pooled estimate by mult", {
+  # Weighting an estimate by 2 is the same as entering it twice
+  set.seed(12)
+  y <- rnorm(8, 0.2, 0.15)
+  v <- runif(8, 0.002, 0.02)
+  weighted <- re_matrix(y, v, mult = c(2, rep(1, 7)))
+  doubled <- re_matrix(c(y[1], y), c(v[1], v))
+  expect_equal(weighted$tau2, doubled$tau2, tolerance = 1e-8)
+  expect_equal(weighted$est, doubled$est, tolerance = 1e-8)
+  expect_gt(doubled$tau2, 0)
 })
 
 test_that("uwls_matrix and pet_peese_matrix match uwls() and fat_pet_peese()", {
