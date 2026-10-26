@@ -7,7 +7,8 @@
 #' @param file_name [character] Output file name.
 #' @param output_dir [character] Output directory (created if needed).
 #' @param digits [integer] Decimal places for numeric columns (the supplement
-#'   reports 3).
+#'   reports 3); p-value columns (`p_value`) keep that many significant digits
+#'   instead, so that small p-values stay readable.
 #' @return [character] The path written, invisibly.
 #' @export
 save_supplement_table <- function(table_df, file_name, output_dir = "output/supplement", digits = 3L) {
@@ -15,7 +16,9 @@ save_supplement_table <- function(table_df, file_name, output_dir = "output/supp
     dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
   }
   num <- vapply(table_df, is.double, logical(1))
-  table_df[num] <- lapply(table_df[num], round, digits = digits)
+  p_cols <- num & names(table_df) == "p_value"
+  table_df[num & !p_cols] <- lapply(table_df[num & !p_cols], round, digits = digits)
+  table_df[p_cols] <- lapply(table_df[p_cols], signif, digits = digits)
   output_path <- file.path(output_dir, file_name)
   utils::write.csv(table_df, file = output_path, row.names = FALSE)
   logger::log_info(paste("Supplement table saved to", output_path))
