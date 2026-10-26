@@ -61,10 +61,12 @@ test_that("run_calibrated_simulation results do not depend on the number of work
 
 test_that("save_supplement_table rounds numeric columns to 3 decimals", {
   dir <- tempfile("supp")
-  tab <- data.frame(estimator = c("RE1", "HS"), mean = c(0.123456, 0.2), n_metas = c(172L, 170L))
+  tab <- data.frame(estimator = c("RE1", "HS"), mean = c(0.123456, 0.2), n_metas = c(172L, 170L),
+                    p_value = c(0.000641, 0.5))
   path <- save_supplement_table(tab, "t.csv", output_dir = dir)
   back <- utils::read.csv(path)
   expect_equal(back$mean, c(0.123, 0.2))
+  expect_equal(back$p_value, c(0.000641, 0.5))
   expect_equal(back$n_metas, c(172L, 170L))
   expect_equal(back$estimator, c("RE1", "HS"))
   unlink(dir, recursive = TRUE)
