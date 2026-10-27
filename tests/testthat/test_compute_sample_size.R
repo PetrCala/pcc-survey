@@ -33,6 +33,12 @@ test_that("compute_sample_size fills only missing values, preserving existing", 
   # Existing values should be preserved, missing should be dof + 7
 
   expect_equal(result$sample_size, c(50, 100, 150, 200))
+  expect_equal(result$sample_size_imputed, c(FALSE, TRUE, FALSE, TRUE))
+})
+
+test_that("compute_sample_size flags nothing when no value is missing", {
+  df <- data.frame(sample_size = c(50, 100), dof = c(43, 93))
+  expect_equal(compute_sample_size(df)$sample_size_imputed, c(FALSE, FALSE))
 })
 
 test_that("compute_sample_size handles all non-missing values (no-op)", {

@@ -93,7 +93,7 @@ This runs setup, data checks, and the analysis in sequence. Run `make help` to s
 | `output/estimator_summary.csv` | Summary statistics across all estimators (Table 1, plus the Appendix Table 1 weight-concentration rows `W_top1` / `W_top3`) |
 | `output/weight_concentration.csv` | Supplement Table S1: study-level top-1 / top-3 weight shares per estimator (mean, median, interquartile range) and the equal-study-weights benchmark |
 | `output/smallest_estimate_counts.csv` | Per-estimator "most conservative" (smallest) and negative counts |
-| `output/pcc_combined_dataset.csv` | Combined study-level dataset for the aggregate FAT-PET panel |
+| `output/pcc_combined_dataset.csv` | Combined estimate-level dataset for the aggregate FAT-PET panel: one row per PCC with its S1 standard error, sample size, degrees of freedom, t-value and a flag for imputed sample sizes |
 | `output/psb_results.csv` | Publication Selection Bias / ESS analysis results |
 | `output/session_info.txt` | R session info for reproducibility |
 | `logs/pcc_survey_analysis_YYYYMMDD_HHMMSS.log` | Timestamped execution log |
@@ -194,6 +194,10 @@ The file must contain a sheet named `"Main"` with the following columns:
 | `Year published` | Publication year |
 
 If you need to substitute a different dataset, place it at `data/pcc_survey_data.xlsx` (or update the path in `pcc_survey_config.yaml`) and ensure it matches the schema above.
+
+### How degrees of freedom and sample sizes are used
+
+Every estimator works from the degrees of freedom, which the pipeline computes for every estimate from the reported PCC and its standard error: `t = effect / se` and `df = t^2 (1 / effect^2 - 1)` (Eq. 1 of the paper solved for df; `calculate_dof()`). The `t-stat` column of the data file is not used, since it is stored without its sign. Estimates are kept only when `|effect| < 1`, `se > 0`, `df > 0` and `sample_size > 3`, which leaves 63,730 PCCs in 172 meta-analyses. The reported `Sample size` is not replaced by the degrees of freedom: it enters only the Hunter-Schmidt weights, the `sample_size > 3` rule and the `avg_n` / `median_n` descriptives, and where it is missing it is set to `df + 7` (2,297 estimates in 14 meta-analyses; `sample_size_imputed` in `output/pcc_combined_dataset.csv` marks them). The reported sample sizes are not always consistent with the degrees of freedom implied by the PCC and its standard error: among the estimates with a reported sample size, about 44% have `n` equal to `df`, 26% have `n - df` between 1 and 10, 1,231 estimates in 39 meta-analyses have `n` below `df - 1`, and 5,603 estimates in 45 meta-analyses have `n` above `2 df` (the twelve "Hang et al." capital-structure meta-analyses account for most of the latter). Only HS depends on these values; the online supplement's Table S6 reports HS weighted by `df` instead.
 
 ## Data and code availability
 

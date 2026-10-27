@@ -37,6 +37,15 @@
   did inline, and `pcc_survey_analyse()` accepts an already prepared `pcc_df`.
   Table 1 and Table S1 are unchanged.
 
+### Added (RSM revision, round 2: data checks of October 2026)
+- `output/pcc_combined_dataset.csv` now also carries `dof` (the degrees of
+  freedom every estimator uses), `t_value` and `sample_size_imputed` (TRUE
+  where the sample size was not reported and is `dof + 7`), so that the
+  per-estimate degrees of freedom can be checked directly rather than backed
+  out of rounded values; `compute_sample_size()` records the flag. The README
+  documents how degrees of freedom and reported sample sizes enter the
+  estimators.
+
 ### Changed (RSM revision, round 2: co-author edits of October 2026)
 - Fisher's z now uses the partial-correlation variance 1 / (df - 1) (Fisher's
   degrees-of-freedom adjustment, as in Stanley, Doucouliagos & Havranek 2024)
