@@ -21,7 +21,8 @@
   RE1 - UWLS1, RE1 - HS and Mean - UWLS1 gaps on ESS, PSST, the (absolute)
   Egger t and RE-based ESS with RE1 heterogeneity and size controls and HC3
   standard errors (`selection_measures()`, `calculate_gap_regressions()`,
-  S8); the calibrated simulation with a `replications` argument
+  S8); the calibrated simulation with a `replications` argument, reporting
+  the bias and the RMSE over all replications of all meta-analyses
   (`run_calibrated_simulation()`, S9); leave-one-MA-out ranges
   (`calculate_leave_one_out()`, S10); and the paper's Section 6 tests
   (`calculate_section6_tests()`).

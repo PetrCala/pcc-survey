@@ -6,9 +6,11 @@
 # RE1 tau2; it is replicated `replications` times without selection and with
 # two degrees of selection, in which statistically insignificant or negative
 # estimates are reported with probability 0.5 or 0.25 while positive
-# significant estimates are always reported. Bias and RMSE are computed per
-# meta-analysis over the replications and averaged across meta-analyses (each
-# counts equally).
+# significant estimates are always reported. Bias is the mean error over all
+# replications of all meta-analyses (the mean of the per-MA biases), and RMSE
+# the root mean squared error over all replications of all meta-analyses (the
+# square root of the mean of the per-MA mean squared errors); each
+# meta-analysis counts equally in both.
 #
 # The draft does not state the following details, implemented as:
 # * True effects: theta_i = mu + N(0, tau2) on the PCC scale (RE1's tau2 is on
@@ -169,7 +171,9 @@ simulate_meta_analysis <- function(design, replications, report_probs, seed, max
 #' @param max_cells [numeric] Memory cap, see [simulate_meta_analysis()].
 #' @return [data.frame] One row per condition and estimator (Mean, RE1, UWLS1,
 #'   UWLS+3, HS, REz, UWLSz, PP): `condition`, `report_prob`, `estimator`,
-#'   `bias`, `rmse` (each averaged across meta-analyses), `mc_se` (Monte Carlo
+#'   `bias` (the mean of the per-MA biases), `rmse` (the square root of the
+#'   mean of the per-MA mean squared errors, i.e. the RMSE over all
+#'   replications of all meta-analyses), `mc_se` (Monte Carlo
 #'   standard error of the bias), `true_mean` and `mean_estimate` (averaged
 #'   across meta-analyses), `n_metas` and `replications`.
 #' @export
@@ -200,7 +204,7 @@ run_calibrated_simulation <- function(pcc_df, replications = 2000L,
         report_prob = report_probs[[cond]],
         estimator = lab,
         bias = mean(sub$bias),
-        rmse = mean(sub$rmse),
+        rmse = sqrt(mean(sub$rmse^2)),
         mc_se = sqrt(sum(sub$var_err / sub$n_valid)) / nrow(sub),
         true_mean = mean(sub$mu),
         mean_estimate = mean(sub$mean_est),
