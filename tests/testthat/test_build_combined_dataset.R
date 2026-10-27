@@ -7,14 +7,27 @@ test_that("build_combined_dataset has the expected columns and SE source", {
     effect = c(0.1, 0.2),
     se_s1 = c(0.01, 0.02),
     se_s2 = c(0.99, 0.98), # should be ignored - se comes from se_s1
-    sample_size = c(50, 60)
+    sample_size = c(50, 60),
+    dof = c(43, 53),
+    t_value = c(10, 10),
+    sample_size_imputed = c(FALSE, TRUE)
   )
 
   result <- build_combined_dataset(pcc_df)
 
-  expect_equal(colnames(result), c("idx", "meta", "study", "effect", "se", "sample_size"))
+  expect_equal(colnames(result), c("idx", "meta", "study", "effect", "se", "sample_size",
+                                   "dof", "t_value", "sample_size_imputed"))
   expect_equal(result$se, c(0.01, 0.02))
+  expect_equal(result$dof, c(43, 53))
+  expect_equal(result$t_value, c(10, 10))
+  expect_equal(result$sample_size_imputed, c(FALSE, TRUE))
   expect_equal(nrow(result), 2)
+})
+
+test_that("build_combined_dataset leaves the imputation flag NA when it is not available", {
+  pcc_df <- data.frame(meta = "A", study = "s1", effect = 0.1, se_s1 = 0.01,
+                       sample_size = 50, dof = 43, t_value = 10)
+  expect_equal(build_combined_dataset(pcc_df)$sample_size_imputed, NA)
 })
 
 test_that("build_combined_dataset assigns idx in alphabetical meta order", {
@@ -23,7 +36,9 @@ test_that("build_combined_dataset assigns idx in alphabetical meta order", {
     study = paste0("s", 1:4),
     effect = c(0.3, 0.1, 0.2, 0.15),
     se_s1 = c(0.03, 0.01, 0.02, 0.015),
-    sample_size = c(100, 50, 75, 60)
+    sample_size = c(100, 50, 75, 60),
+    dof = c(93, 43, 68, 53),
+    t_value = c(10, 10, 10, 10)
   )
 
   result <- build_combined_dataset(pcc_df)
@@ -39,7 +54,9 @@ test_that("build_combined_dataset idx aligns with split()/summary ordering", {
     study = paste0("s", 1:5),
     effect = c(0.2, 0.1, 0.3, 0.12, 0.22),
     se_s1 = c(0.02, 0.01, 0.03, 0.012, 0.022),
-    sample_size = c(40, 50, 60, 70, 80)
+    sample_size = c(40, 50, 60, 70, 80),
+    dof = c(33, 43, 53, 63, 73),
+    t_value = c(10, 10, 10, 10, 10)
   )
 
   result <- build_combined_dataset(pcc_df)

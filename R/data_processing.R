@@ -401,14 +401,19 @@ convert_inverse_relationships <- function(df, log_results = TRUE) {
 #'
 #' Sets sample_size = dof + 7 for any row where sample_size is NA.
 #' This creates a single definitive sample_size column for all downstream methods.
+#' A logical column `sample_size_imputed` records which rows were filled, so
+#' that the reported sample sizes can be told apart from the imputed ones
+#' downstream (for example in the combined dataset).
 #'
 #' @param df [data.frame] Data frame with 'sample_size' and 'dof' columns
-#' @return [data.frame] Data frame with filled sample_size column
+#' @return [data.frame] Data frame with filled sample_size column and a
+#'   `sample_size_imputed` flag
 #' @export
 compute_sample_size <- function(df) {
   validate_columns(df, c("sample_size", "dof"))
 
   missing_ss <- is.na(df$sample_size)
+  df$sample_size_imputed <- missing_ss
   if (any(missing_ss)) {
     df$sample_size[missing_ss] <- df$dof[missing_ss] + 7
     logger::log_info(paste("Filled", sum(missing_ss), "missing sample_size values using dof + 7"))

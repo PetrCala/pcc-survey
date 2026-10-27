@@ -488,11 +488,15 @@ calculate_smallest_estimate_counts <- function(results_df) {
 #'
 #' @param pcc_df [data.frame] Per-observation PCC data after
 #'   [compute_derived_quantities()]. Needs columns: meta, study, effect, se_s1,
-#'   sample_size.
-#' @return [data.frame] Columns: idx, meta, study, effect, se, sample_size.
+#'   sample_size, dof, t_value; `sample_size_imputed` (from
+#'   [compute_sample_size()]) is carried over when present.
+#' @return [data.frame] Columns: idx, meta, study, effect, se (the S1 standard
+#'   error), sample_size, dof (the degrees of freedom every estimator uses,
+#'   t^2 (1 / effect^2 - 1)), t_value (effect / se) and sample_size_imputed
+#'   (TRUE where the sample size was not reported and is dof + 7).
 #' @export
 build_combined_dataset <- function(pcc_df) {
-  required <- c("meta", "study", "effect", "se_s1", "sample_size")
+  required <- c("meta", "study", "effect", "se_s1", "sample_size", "dof", "t_value")
   missing_cols <- setdiff(required, colnames(pcc_df))
   if (length(missing_cols) > 0) {
     cli::cli_abort("build_combined_dataset is missing required columns: {.val {missing_cols}}")
@@ -502,6 +506,9 @@ build_combined_dataset <- function(pcc_df) {
   meta_levels <- sort(unique(meta_chr))
   idx <- match(meta_chr, meta_levels)
 
+  imputed <- pcc_df[["sample_size_imputed"]]
+  if (is.null(imputed)) imputed <- rep(NA, nrow(pcc_df))
+
   data.frame(
     idx = idx,
     meta = meta_chr,
@@ -509,6 +516,9 @@ build_combined_dataset <- function(pcc_df) {
     effect = pcc_df$effect,
     se = pcc_df$se_s1,
     sample_size = pcc_df$sample_size,
+    dof = pcc_df$dof,
+    t_value = pcc_df$t_value,
+    sample_size_imputed = as.logical(imputed),
     row.names = NULL,
     stringsAsFactors = FALSE
   )
